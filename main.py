@@ -121,14 +121,14 @@ if __name__ == '__main__':
                 if not (keys[pygame.K_LEFT] or keys[pygame.K_RIGHT]):
                     dx = 0
         if dx > 0:
-            angle -= 1
+            angle -= .4
         elif dx < 0:
-            angle += 1
+            angle += .4
         else:
             if angle > 0:
-                angle -= 1
+                angle -= .4
             elif angle < 0:
-                angle += 1
+                angle += .4
 
         if angle < 0:
             angle = max(-5, angle)

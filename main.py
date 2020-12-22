@@ -67,9 +67,12 @@ class Car(pygame.sprite.Sprite):
         self.speed_x = 7
         self.speed_y = 5
 
-    def update(self, dx, dy):
+    def update(self, dx, dy, angle):
+
         self.rect.x += dx
         self.rect.y += dy
+
+        self.image = pygame.transform.rotate(Car.image, angle)
         if self.rect.x + self.width >= width:
             self.rect.x = width - self.width
         if self.rect.x <= 0:
@@ -81,45 +84,62 @@ class Car(pygame.sprite.Sprite):
 
 
 if __name__ == '__main__':
+
     running = True
-    all_sprites = pygame.sprite.Group()
-    car = Car()
-    roads = [Road(0), Road(-height)]
     fps = 60
     clock = pygame.time.Clock()
+
+    all_sprites = pygame.sprite.Group()
+
+    car = Car()
+    roads = [Road(0), Road(-height)]
+
     [all_sprites.add(road) for road in roads]
     all_sprites.add(car)
 
-    dx, dy = 0, 0
-    dxy = int((2 * car.speed_x ** 2) ** 0.5) // 2
+    dx, dy, angle = 0, 0, 0
 
     while running:
         screen.fill((0, 0, 0))
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.KEYDOWN:
                 keys = pygame.key.get_pressed()
-
-                if keys[pygame.K_LEFT]:
-                    dx = -car.speed_x
                 if keys[pygame.K_RIGHT]:
                     dx = car.speed_x
 
+                if keys[pygame.K_LEFT]:
+                    dx = -car.speed_x
+
+                if keys[pygame.K_LEFT] and keys[pygame.K_RIGHT]:
+                    dx = 0
+
             if event.type == pygame.KEYUP:
                 keys = pygame.key.get_pressed()
-                if not keys[pygame.K_LEFT]:
+                if not (keys[pygame.K_LEFT] or keys[pygame.K_RIGHT]):
                     dx = 0
-                if not keys[pygame.K_RIGHT]:
-                    dx = 0
-                if not keys[pygame.K_UP]:
-                    dy = 0
-                if not keys[pygame.K_DOWN]:
-                    dy = 0
+        if dx > 0:
+            angle -= 1
+        elif dx < 0:
+            angle += 1
+        else:
+            if angle > 0:
+                angle -= 1
+            elif angle < 0:
+                angle += 1
 
-        car.update(dx, dy)
+        if angle < 0:
+            angle = max(-5, angle)
+        elif angle > 0:
+            angle = min(5, angle)
+
+        car.update(dx, dy, angle)
         [road.update() for road in roads]
+
         all_sprites.draw(screen)
+
         clock.tick(fps)
         pygame.display.flip()
 

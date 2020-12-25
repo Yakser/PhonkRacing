@@ -86,9 +86,9 @@ class Car(pygame.sprite.Sprite):
 
 
 class Coin(pygame.sprite.Sprite):
-    image = load_image("coin.jpg", -1)
+    image = load_image("coin.png")
 
-    image = pygame.transform.scale(image, (75, 75))  #
+    image = pygame.transform.scale(image, (75, 75))
     coin_width = image.get_width()
 
     def __init__(self, *group):

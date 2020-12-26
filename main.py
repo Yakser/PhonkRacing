@@ -117,6 +117,7 @@ class Coin(pygame.sprite.Sprite):
 class DistanceCounter:
     def __init__(self, num):
         self.num = str(num)
+
         font = pygame.font.Font("fonts/distance_counter_font.ttf", 60)
         text_coord = 50
         string_rendered = font.render(self.num, 1, pygame.Color('white'))

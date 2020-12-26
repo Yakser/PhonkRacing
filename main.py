@@ -1,6 +1,7 @@
 import pygame
 import os
 import sys
+import random
 
 pygame.init()
 pygame.display.set_caption('PhonkRacing')
@@ -66,32 +67,110 @@ class Car(pygame.sprite.Sprite):
         self.rect.y = width - self.height // 2 - 150
         self.speed_x = 7
         self.speed_y = 5
+        self.distance = 0
+        self.distance_counter = DistanceCounter(0)
 
-    def update(self, dx, dy):
+    def update(self, dx, angle):
+
         self.rect.x += dx
-        self.rect.y += dy
+        self.distance += 1
+        self.distance_counter.update(self.distance)
+        self.image = pygame.transform.rotate(Car.image, angle)
+
         if self.rect.x + self.width >= width:
             self.rect.x = width - self.width
         if self.rect.x <= 0:
             self.rect.x = 0
-        if self.rect.y + self.height >= height:
-            self.rect.y = height - self.height
-        if self.rect.y <= 0:
-            self.rect.y = 0
+        self.image = pygame.transform.rotate(Car.image, angle)
+
+    def reset(self):
+        self.__init__()
+
+    def get_distance(self):
+        return self.distance
+
+
+class Coin(pygame.sprite.Sprite):
+    image = load_image("coin.png")
+
+    image = pygame.transform.scale(image, (75, 75))
+    coin_width = image.get_width()
+
+    def __init__(self, *group):
+        super().__init__(*group)
+        self.image = Coin.image
+        self.coin_speed = 10
+        self.width = self.image.get_width()
+        self.height = self.image.get_height()
+        self.rect = self.image.get_rect()
+        self.rect.x = random.randint(0, width - Coin.coin_width)
+        self.rect.y = random.randint(-height, height - Coin.coin_width)
+
+    def update(self, *args):
+        self.rect.y += self.coin_speed
+        if self.rect.y >= height:
+            self.rect.y = -width
+            self.rect.x = random.randint(5, width - Coin.coin_width - 5)
+            self.rect.y = random.randint(-height, 0)
+
+
+class DistanceCounter:
+    def __init__(self, num):
+        self.num = str(num)
+
+        font = pygame.font.Font("fonts/distance_counter_font.ttf", 60)
+        text_coord = 50
+        string_rendered = font.render(self.num, 1, pygame.Color('white'))
+        rect = string_rendered.get_rect()
+        text_coord += 10
+        rect.top = text_coord
+        rect.x = width - rect.right - 20
+        text_coord += rect.height
+        screen.blit(string_rendered, rect)
+
+    def update(self, dist):
+        self.num = str(dist // fps * 5)
+        self.__init__(self.num)
+
+
+def terminate():
+    pygame.quit()
+    sys.exit()
+
+
+def show_intro():
+
+    bg = pygame.transform.scale(load_image('phonkracing_intro.png'), (width, height))
+    screen.blit(bg, (0, 0))
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            if event.type == pygame.KEYUP or event.type == pygame.MOUSEBUTTONDOWN:
+                return
+        pygame.display.flip()
+        clock.tick(fps)
 
 
 if __name__ == '__main__':
+
     running = True
+    fps = 60
+    clock = pygame.time.Clock()
+
     all_sprites = pygame.sprite.Group()
     car = Car()
     roads = [Road(0), Road(-height)]
-    fps = 60
-    clock = pygame.time.Clock()
-    [all_sprites.add(road) for road in roads]
-    all_sprites.add(car)
+    coins = [Coin(), Coin(), Coin()]
 
-    dx, dy = 0, 0
-    dxy = int((2 * car.speed_x ** 2) ** 0.5) // 2
+    [all_sprites.add(road) for road in roads]
+    [all_sprites.add(coin) for coin in coins]
+    all_sprites.add(car)
+    dist_counter = DistanceCounter(0)
+    dx = angle = 0
+
+    show_intro()  # заставка
 
     while running:
         screen.fill((0, 0, 0))
@@ -100,26 +179,39 @@ if __name__ == '__main__':
                 running = False
             if event.type == pygame.KEYDOWN:
                 keys = pygame.key.get_pressed()
-
-                if keys[pygame.K_LEFT]:
-                    dx = -car.speed_x
                 if keys[pygame.K_RIGHT]:
                     dx = car.speed_x
 
+                if keys[pygame.K_LEFT]:
+                    dx = -car.speed_x
+
+                if keys[pygame.K_LEFT] and keys[pygame.K_RIGHT]:
+                    dx = 0
+
             if event.type == pygame.KEYUP:
                 keys = pygame.key.get_pressed()
-                if not keys[pygame.K_LEFT]:
+                if not (keys[pygame.K_LEFT] or keys[pygame.K_RIGHT]):
                     dx = 0
-                if not keys[pygame.K_RIGHT]:
-                    dx = 0
-                if not keys[pygame.K_UP]:
-                    dy = 0
-                if not keys[pygame.K_DOWN]:
-                    dy = 0
+        if dx > 0:
+            angle -= 1
+        elif dx < 0:
+            angle += 1
+        else:
+            if angle > 0:
+                angle -= 1
+            elif angle < 0:
+                angle += 1
 
-        car.update(dx, dy)
+        if angle < 0:
+            angle = max(-5, angle)
+        elif angle > 0:
+            angle = min(5, angle)
+
         [road.update() for road in roads]
+        [coin.update() for coin in coins]
         all_sprites.draw(screen)
+        car.update(dx, angle)
+
         clock.tick(fps)
         pygame.display.flip()
 

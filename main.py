@@ -75,6 +75,14 @@ class Car(pygame.sprite.Sprite):
         self.rect.x += dx
         self.distance += 1
         self.distance_counter.update(self.distance)
+
+    def update(self, dx, dy, angle):
+
+        self.rect.x += dx
+        self.rect.y += dy
+
+        self.image = pygame.transform.rotate(Car.image, angle)
+
         if self.rect.x + self.width >= width:
             self.rect.x = width - self.width
         if self.rect.x <= 0:
@@ -141,7 +149,9 @@ if __name__ == '__main__':
     car = Car()
 
     roads = [Road(0), Road(-height)]
+
     coins = [Coin(), Coin(), Coin()]
+
     [all_sprites.add(road) for road in roads]
     [all_sprites.add(coin) for coin in coins]
     all_sprites.add(car)
@@ -185,11 +195,11 @@ if __name__ == '__main__':
         elif angle > 0:
             angle = min(5, angle)
 
-
         [road.update() for road in roads]
         [coin.update() for coin in coins]
         all_sprites.draw(screen)
         car.update(dx, dy, angle)
+
         clock.tick(fps)
         pygame.display.flip()
 

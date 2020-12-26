@@ -67,22 +67,27 @@ class Car(pygame.sprite.Sprite):
         self.rect.y = width - self.height // 2 - 150
         self.speed_x = 7
         self.speed_y = 5
+        self.distance = 0
+        self.distance_counter = DistanceCounter(0)
 
-    def update(self, dx, dy, angle):
+    def update(self, dx, angle):
 
         self.rect.x += dx
-        self.rect.y += dy
+        self.distance += 1
+        self.distance_counter.update(self.distance)
+        self.image = pygame.transform.rotate(Car.image, angle)
 
         if self.rect.x + self.width >= width:
             self.rect.x = width - self.width
         if self.rect.x <= 0:
             self.rect.x = 0
-        if self.rect.y + self.height >= height:
-            self.rect.y = height - self.height
-        if self.rect.y <= 0:
-            self.rect.y = 0
-
         self.image = pygame.transform.rotate(Car.image, angle)
+
+    def reset(self):
+        self.__init__()
+
+    def get_distance(self):
+        return self.distance
 
 
 class Coin(pygame.sprite.Sprite):
@@ -109,6 +114,45 @@ class Coin(pygame.sprite.Sprite):
             self.rect.y = random.randint(-height, 0)
 
 
+class DistanceCounter:
+    def __init__(self, num):
+        self.num = str(num)
+
+        font = pygame.font.Font("fonts/distance_counter_font.ttf", 60)
+        text_coord = 50
+        string_rendered = font.render(self.num, 1, pygame.Color('white'))
+        rect = string_rendered.get_rect()
+        text_coord += 10
+        rect.top = text_coord
+        rect.x = width - rect.right - 20
+        text_coord += rect.height
+        screen.blit(string_rendered, rect)
+
+    def update(self, dist):
+        self.num = str(dist // fps * 5)
+        self.__init__(self.num)
+
+
+def terminate():
+    pygame.quit()
+    sys.exit()
+
+
+def show_intro():
+
+    bg = pygame.transform.scale(load_image('phonkracing_intro.png'), (width, height))
+    screen.blit(bg, (0, 0))
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            if event.type == pygame.KEYUP or event.type == pygame.MOUSEBUTTONDOWN:
+                return
+        pygame.display.flip()
+        clock.tick(fps)
+
+
 if __name__ == '__main__':
 
     running = True
@@ -116,19 +160,20 @@ if __name__ == '__main__':
     clock = pygame.time.Clock()
 
     all_sprites = pygame.sprite.Group()
-
     car = Car()
     roads = [Road(0), Road(-height)]
     coins = [Coin(), Coin(), Coin()]
-    [all_sprites.add(road) for road in roads]
-    all_sprites.add(car)
-    [all_sprites.add(coin) for coin in coins]
 
-    dx, dy, angle = 0, 0, 0
+    [all_sprites.add(road) for road in roads]
+    [all_sprites.add(coin) for coin in coins]
+    all_sprites.add(car)
+    dist_counter = DistanceCounter(0)
+    dx = angle = 0
+
+    show_intro()  # заставка
 
     while running:
         screen.fill((0, 0, 0))
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -162,11 +207,11 @@ if __name__ == '__main__':
         elif angle > 0:
             angle = min(5, angle)
 
-        car.update(dx, dy, angle)
         [road.update() for road in roads]
         [coin.update() for coin in coins]
-
         all_sprites.draw(screen)
+        car.update(dx, angle)
+
         clock.tick(fps)
         pygame.display.flip()
 

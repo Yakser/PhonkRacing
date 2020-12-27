@@ -7,6 +7,9 @@ pygame.init()
 pygame.display.set_caption('PhonkRacing')
 size = width, height = 800, 800
 screen = pygame.display.set_mode(size)
+fps = 60
+running = True
+clock = pygame.time.Clock()
 
 
 def load_image(name, colorkey=None):
@@ -185,7 +188,8 @@ def terminate():
 def show_intro():
     bg = pygame.transform.scale(load_image('phonkracing_intro.png'), (width, height))
     screen.blit(bg, (0, 0))
-
+    fps = 60
+    clock = pygame.time.Clock()
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -196,28 +200,80 @@ def show_intro():
         clock.tick(fps)
 
 
-if __name__ == '__main__':
+class MenuButton(pygame.sprite.Sprite):
+    def __init__(self, ico_name, functype, y_coord):
+        super(MenuButton, self).__init__()
+        self.btn_w = 125
+        self.btn_h = 75
+        self.functype = functype
+        self.ico = pygame.transform.scale(load_image(ico_name), (self.btn_w, self.btn_h))
+        self.image = self.ico
+        self.i = ico_name.split(".")[0] + "_hovered.png"
+        self.ico_hovered = pygame.transform.scale(load_image(ico_name.split(".")[0] + "_hovered.png"),
+                                                  (self.btn_w, self.btn_h))
+        self.rect = self.image.get_rect()
+        self.width = self.image.get_width()
+        self.height = self.image.get_height()
+        self.rect.x = width // 2 - self.btn_w // 2
+        self.rect.y = y_coord
+
+
+def new_game():
+    car.distance = 0
+    game()
+
+
+def main_menu():
+    screen.fill(pygame.Color("#305f72"))
+    buttons_group = pygame.sprite.Group()
+
+    functions = {
+        "play": new_game,
+        "quit": terminate,
+        "continue": game
+    }
+
+    play_btn = MenuButton("play_btn.png", "play", 100)
+    continue_btn = MenuButton("continue_btn.png", "continue", 200)
+    quit_btn = MenuButton("quit_btn.png", "quit", 300)
+
+    buttons_group.add(play_btn)
+    buttons_group.add(continue_btn)
+    buttons_group.add(quit_btn)
 
     running = True
-    fps = 60
-    clock = pygame.time.Clock()
+    while running:
+        mx, my = pygame.mouse.get_pos()
+        clicked = False
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
 
-    all_sprites = pygame.sprite.Group()
-    car = Car()
-    roads = [Road(0), Road(-height)]
-    coins = [Coin(), Coin(), Coin()]
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    clicked = True
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    terminate()
 
-    [all_sprites.add(road) for road in roads]
-    [all_sprites.add(coin) for coin in coins]
-    all_sprites.add(car)
-    dist_counter = DistanceCounter(0)
+        for sprite in buttons_group.sprites():
+            if sprite.rect.collidepoint((mx, my)):
+                sprite.image = sprite.ico_hovered
+                if clicked:
+                    functions[sprite.functype]()
+                    return
+            else:
+                sprite.image = sprite.ico
 
-    with open("coins_count.txt", "r") as coins_count:
-        coins_count = int(coins_count.read())
-        coins_counter = CoinsCounter(coins_count)
+        buttons_group.draw(screen)
+
+        clock.tick(fps)
+        pygame.display.flip()
+
+
+def game():
+    running = True
     dx = angle = 0
-
-    show_intro()  # заставка
 
     while running:
         screen.fill((0, 0, 0))
@@ -234,6 +290,10 @@ if __name__ == '__main__':
 
                 if keys[pygame.K_LEFT] and keys[pygame.K_RIGHT]:
                     dx = 0
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        main_menu()
+                        return
 
             if event.type == pygame.KEYUP:
                 keys = pygame.key.get_pressed()
@@ -262,7 +322,26 @@ if __name__ == '__main__':
         clock.tick(fps)
         pygame.display.flip()
 
-    terminate()
+    main_menu()
+
+
+all_sprites = pygame.sprite.Group()
+car = Car()
+roads = [Road(0), Road(-height)]
+coins = [Coin(), Coin(), Coin()]
+
+[all_sprites.add(road) for road in roads]
+[all_sprites.add(coin) for coin in coins]
+all_sprites.add(car)
+dist_counter = DistanceCounter(0)
+
+with open("coins_count.txt", "r") as coins_count:
+    coins_count = int(coins_count.read())
+    coins_counter = CoinsCounter(coins_count)
+
+if __name__ == '__main__':
+    show_intro()
+    main_menu()
 
 # # Created by Sergey Yaksanov at 10.12.2020
 # Copyright © 2020 Yakser. All rights reserved.

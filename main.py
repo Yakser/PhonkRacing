@@ -70,6 +70,9 @@ class Car(pygame.sprite.Sprite):
         self.distance = 0
         self.distance_counter = DistanceCounter(0)
         self.coins_cnt = 0
+        with open("coins_count.txt", "r") as coins_count:
+            self.coins_cnt = int(coins_count.read())
+
 
     def update(self, dx, angle):
 
@@ -169,10 +172,13 @@ class CoinsCounter:
         screen.blit(string_rendered, rect)
 
     def update(self, coins_cnt):
+        self.coins_cnt = coins_cnt
         self.__init__(coins_cnt)
 
 
 def terminate():
+    with open("coins_count.txt", "w") as coins_count:
+        coins_count.write(coins_counter.coins_cnt)
     pygame.quit()
     sys.exit()
 
@@ -207,7 +213,10 @@ if __name__ == '__main__':
     [all_sprites.add(coin) for coin in coins]
     all_sprites.add(car)
     dist_counter = DistanceCounter(0)
-    coins_counter = CoinsCounter(0)
+
+    with open("coins_count.txt", "r") as coins_count:
+        coins_count = int(coins_count.read())
+        coins_counter = CoinsCounter(coins_count)
     dx = angle = 0
 
     show_intro()  # заставка
@@ -255,7 +264,7 @@ if __name__ == '__main__':
         clock.tick(fps)
         pygame.display.flip()
 
-    pygame.quit()
+    terminate()
 
 # # Created by Sergey Yaksanov at 10.12.2020
 # Copyright © 2020 Yakser. All rights reserved.

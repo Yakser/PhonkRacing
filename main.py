@@ -32,7 +32,7 @@ def load_image(name, colorkey=None):
 
 
 class Road(pygame.sprite.Sprite):
-    image = load_image("road.png")
+    image = load_image("road.jpg")
     image = pygame.transform.scale(image, (width, width))
     height = image.get_height()
 
@@ -69,7 +69,7 @@ class Car(pygame.sprite.Sprite):
         self.speed_y = 5
         self.distance = 0
         self.distance_counter = DistanceCounter(0)
-        self.money = 0
+        self.coins_cnt = 0
 
     def update(self, dx, angle):
 
@@ -84,9 +84,10 @@ class Car(pygame.sprite.Sprite):
             self.rect.x = 0
         self.image = pygame.transform.rotate(Car.image, angle)
         collided_coin = pygame.sprite.spritecollideany(self, coins)
-        if collided_coin:
-            self.money += 5
+        if collided_coin and collided_coin.visible:
+            self.coins_cnt += 1
             collided_coin.hide()
+        coins_counter.update(self.coins_cnt)
 
     def reset(self):
         self.__init__()
@@ -151,6 +152,26 @@ class DistanceCounter:
         self.__init__(self.num)
 
 
+class CoinsCounter:
+    def __init__(self, coins_cnt):
+        self.coins_cnt = str(coins_cnt)
+        coin_ico = Coin.image
+        coin_ico = pygame.transform.scale(coin_ico, (30, 30))
+        font = pygame.font.Font("fonts/distance_counter_font.ttf", 60)
+        text_coord = 0
+        string_rendered = font.render(self.coins_cnt, 1, pygame.Color('#f4de7e'))
+        rect = string_rendered.get_rect()
+        text_coord += 10
+        rect.top = text_coord
+        rect.x = width - rect.right - 20
+        text_coord += rect.height
+        screen.blit(coin_ico, (rect.left - 30, rect.y + 30, 30, 30))
+        screen.blit(string_rendered, rect)
+
+    def update(self, coins_cnt):
+        self.__init__(coins_cnt)
+
+
 def terminate():
     pygame.quit()
     sys.exit()
@@ -186,6 +207,7 @@ if __name__ == '__main__':
     [all_sprites.add(coin) for coin in coins]
     all_sprites.add(car)
     dist_counter = DistanceCounter(0)
+    coins_counter = CoinsCounter(0)
     dx = angle = 0
 
     show_intro()  # заставка

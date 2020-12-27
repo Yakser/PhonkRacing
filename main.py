@@ -73,7 +73,6 @@ class Car(pygame.sprite.Sprite):
         with open("coins_count.txt", "r") as coins_count:
             self.coins_cnt = int(coins_count.read())
 
-
     def update(self, dx, angle):
 
         self.rect.x += dx
@@ -168,7 +167,7 @@ class CoinsCounter:
         rect.top = text_coord
         rect.x = width - rect.right - 20
         text_coord += rect.height
-        screen.blit(coin_ico, (rect.left - 30, rect.y + 30, 30, 30))
+        screen.blit(coin_ico, (rect.left - 35, rect.y + 30, 30, 30))
         screen.blit(string_rendered, rect)
 
     def update(self, coins_cnt):
@@ -184,7 +183,6 @@ def terminate():
 
 
 def show_intro():
-
     bg = pygame.transform.scale(load_image('phonkracing_intro.png'), (width, height))
     screen.blit(bg, (0, 0))
 

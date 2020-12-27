@@ -70,6 +70,8 @@ class Car(pygame.sprite.Sprite):
         self.distance = 0
         self.distance_counter = DistanceCounter(0)
         self.coins_cnt = 0
+        with open("coins_count.txt", "r") as coins_count:
+            self.coins_cnt = int(coins_count.read())
 
     def update(self, dx, angle):
 
@@ -165,20 +167,22 @@ class CoinsCounter:
         rect.top = text_coord
         rect.x = width - rect.right - 20
         text_coord += rect.height
-        screen.blit(coin_ico, (rect.left - 30, rect.y + 30, 30, 30))
+        screen.blit(coin_ico, (rect.left - 35, rect.y + 30, 30, 30))
         screen.blit(string_rendered, rect)
 
     def update(self, coins_cnt):
+        self.coins_cnt = coins_cnt
         self.__init__(coins_cnt)
 
 
 def terminate():
+    with open("coins_count.txt", "w") as coins_count:
+        coins_count.write(coins_counter.coins_cnt)
     pygame.quit()
     sys.exit()
 
 
 def show_intro():
-
     bg = pygame.transform.scale(load_image('phonkracing_intro.png'), (width, height))
     screen.blit(bg, (0, 0))
 
@@ -207,7 +211,10 @@ if __name__ == '__main__':
     [all_sprites.add(coin) for coin in coins]
     all_sprites.add(car)
     dist_counter = DistanceCounter(0)
-    coins_counter = CoinsCounter(0)
+
+    with open("coins_count.txt", "r") as coins_count:
+        coins_count = int(coins_count.read())
+        coins_counter = CoinsCounter(coins_count)
     dx = angle = 0
 
     show_intro()  # заставка
@@ -255,7 +262,7 @@ if __name__ == '__main__':
         clock.tick(fps)
         pygame.display.flip()
 
-    pygame.quit()
+    terminate()
 
 # # Created by Sergey Yaksanov at 10.12.2020
 # Copyright © 2020 Yakser. All rights reserved.

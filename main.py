@@ -69,6 +69,7 @@ class Car(pygame.sprite.Sprite):
         self.speed_y = 5
         self.distance = 0
         self.distance_counter = DistanceCounter(0)
+        self.money = 0
 
     def update(self, dx, angle):
 
@@ -82,6 +83,10 @@ class Car(pygame.sprite.Sprite):
         if self.rect.x <= 0:
             self.rect.x = 0
         self.image = pygame.transform.rotate(Car.image, angle)
+        collided_coin = pygame.sprite.spritecollideany(self, coins)
+        if collided_coin:
+            self.money += 5
+            collided_coin.hide()
 
     def reset(self):
         self.__init__()
@@ -105,6 +110,7 @@ class Coin(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = random.randint(0, width - Coin.coin_width)
         self.rect.y = random.randint(-height, height - Coin.coin_width)
+        self.visible = True
 
     def update(self, *args):
         self.rect.y += self.coin_speed
@@ -112,6 +118,18 @@ class Coin(pygame.sprite.Sprite):
             self.rect.y = -width
             self.rect.x = random.randint(5, width - Coin.coin_width - 5)
             self.rect.y = random.randint(-height, 0)
+            self.show()
+
+    def hide(self):
+        self.visible = False
+        transparent_sprite = pygame.Surface((width, height))
+        transparent_sprite = transparent_sprite.convert_alpha()
+        transparent_sprite.fill((0, 0, 0, 0))
+        self.image = transparent_sprite
+
+    def show(self):
+        self.visible = True
+        self.image = Coin.image
 
 
 class DistanceCounter:

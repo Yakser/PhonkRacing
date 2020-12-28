@@ -225,7 +225,55 @@ def new_game():
 
 
 def shop():
-    pass
+    bg = pygame.transform.scale(load_image('menu_bg.png'), (width, height))
+    screen.blit(bg, (0, 0))
+    buttons_group = pygame.sprite.Group()
+
+    functions = {
+        "play": new_game,
+        "quit": terminate,
+        "continue": game,
+        "shop": shop
+    }
+    with open("coins_count.txt", "r") as coins_count:
+        coins_count = int(coins_count.read())
+
+    font = pygame.font.Font("fonts/distance_counter_font.ttf", 90)
+    string_rendered = font.render("SHOP", 1, pygame.Color('#f4de7e'))
+    rect = string_rendered.get_rect()
+    rect.top = 10
+    rect.x = width // 2 - rect.width // 2
+    screen.blit(string_rendered, rect)
+
+    running = True
+    while running:
+        mx, my = pygame.mouse.get_pos()
+        clicked = False
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    clicked = True
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    main_menu()
+                    return
+
+        for sprite in buttons_group.sprites():
+            if sprite.rect.collidepoint((mx, my)):
+                sprite.image = sprite.ico_hovered
+                if clicked:
+                    functions[sprite.functype]()
+                    return
+            else:
+                sprite.image = sprite.ico
+
+        buttons_group.draw(screen)
+        coins_counter.update(coins_count)
+        clock.tick(fps)
+        pygame.display.flip()
 
 
 def main_menu():

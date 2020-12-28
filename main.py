@@ -9,6 +9,7 @@ size = width, height = 800, 800
 screen = pygame.display.set_mode(size)
 fps = 60
 running = True
+game_running = False
 clock = pygame.time.Clock()
 
 
@@ -186,7 +187,7 @@ def terminate():
 
 
 def show_intro():
-    bg = pygame.transform.scale(load_image('phonkracing_intro.png'), (width, height))
+    bg = pygame.transform.scale(load_image('bg.png'), (width, height))
     screen.blit(bg, (0, 0))
     fps = 60
     clock = pygame.time.Clock()
@@ -224,11 +225,8 @@ def new_game():
 
 
 def shop():
-    pass
-
-
-def main_menu():
-    screen.fill(pygame.Color("#305f72"))
+    bg = pygame.transform.scale(load_image('menu_bg.png'), (width, height))
+    screen.blit(bg, (0, 0))
     buttons_group = pygame.sprite.Group()
 
     functions = {
@@ -239,13 +237,72 @@ def main_menu():
     }
     with open("coins_count.txt", "r") as coins_count:
         coins_count = int(coins_count.read())
-    play_btn = MenuButton("play_btn.png", "play", 100)
-    continue_btn = MenuButton("continue_btn.png", "continue", 200)
-    shop_btn = MenuButton("shop_btn.png", "shop", 300)
-    quit_btn = MenuButton("quit_btn.png", "quit", 400)
+
+    font = pygame.font.Font("fonts/distance_counter_font.ttf", 90)
+    string_rendered = font.render("SHOP", 1, pygame.Color('#f4de7e'))
+    rect = string_rendered.get_rect()
+    rect.top = 10
+    rect.x = width // 2 - rect.width // 2
+    screen.blit(string_rendered, rect)
+
+    running = True
+    while running:
+        mx, my = pygame.mouse.get_pos()
+        clicked = False
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    clicked = True
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    main_menu()
+                    return
+
+        for sprite in buttons_group.sprites():
+            if sprite.rect.collidepoint((mx, my)):
+                sprite.image = sprite.ico_hovered
+                if clicked:
+                    functions[sprite.functype]()
+                    return
+            else:
+                sprite.image = sprite.ico
+
+        buttons_group.draw(screen)
+        coins_counter.update(coins_count)
+        clock.tick(fps)
+        pygame.display.flip()
+
+
+def main_menu():
+    bg = pygame.transform.scale(load_image('menu_bg.png'), (width, height))
+    screen.blit(bg, (0, 0))
+    buttons_group = pygame.sprite.Group()
+
+    functions = {
+        "play": new_game,
+        "quit": terminate,
+        "continue": game,
+        "shop": shop
+    }
+    with open("coins_count.txt", "r") as coins_count:
+        coins_count = int(coins_count.read())
+    dy = 100
+    play_btn = MenuButton("play_btn.png", "play", dy)
+
+    dy += 100
+    if car.distance:
+        continue_btn = MenuButton("continue_btn.png", "continue", dy)
+        buttons_group.add(continue_btn)
+        dy += 100
+    shop_btn = MenuButton("shop_btn.png", "shop", dy)
+    dy += 100
+    quit_btn = MenuButton("quit_btn.png", "quit", dy)
 
     buttons_group.add(play_btn)
-    buttons_group.add(continue_btn)
+
     buttons_group.add(shop_btn)
     buttons_group.add(quit_btn)
 
@@ -280,14 +337,14 @@ def main_menu():
 
 
 def game():
-    running = True
+    game_running = True
     dx = angle = 0
 
-    while running:
+    while game_running:
         screen.fill((0, 0, 0))
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                game_running = False
             if event.type == pygame.KEYDOWN:
                 keys = pygame.key.get_pressed()
                 if keys[pygame.K_RIGHT]:

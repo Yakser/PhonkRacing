@@ -7,6 +7,9 @@ pygame.init()
 pygame.display.set_caption('PhonkRacing')
 size = width, height = 800, 800
 screen = pygame.display.set_mode(size)
+fps = 60
+running = True
+clock = pygame.time.Clock()
 
 
 def load_image(name, colorkey=None):
@@ -32,7 +35,7 @@ def load_image(name, colorkey=None):
 
 
 class Road(pygame.sprite.Sprite):
-    image = load_image("road.png")
+    image = load_image("road.jpg")
     image = pygame.transform.scale(image, (width, width))
     height = image.get_height()
 
@@ -69,6 +72,9 @@ class Car(pygame.sprite.Sprite):
         self.speed_y = 5
         self.distance = 0
         self.distance_counter = DistanceCounter(0)
+        self.coins_cnt = 0
+        with open("coins_count.txt", "r") as coins_count:
+            self.coins_cnt = int(coins_count.read())
 
     def update(self, dx, angle):
 
@@ -82,6 +88,11 @@ class Car(pygame.sprite.Sprite):
         if self.rect.x <= 0:
             self.rect.x = 0
         self.image = pygame.transform.rotate(Car.image, angle)
+        collided_coin = pygame.sprite.spritecollideany(self, coins)
+        if collided_coin and collided_coin.visible:
+            self.coins_cnt += 1
+            collided_coin.hide()
+        coins_counter.update(self.coins_cnt)
 
     def reset(self):
         self.__init__()
@@ -105,6 +116,7 @@ class Coin(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = random.randint(0, width - Coin.coin_width)
         self.rect.y = random.randint(-height, height - Coin.coin_width)
+        self.visible = True
 
     def update(self, *args):
         self.rect.y += self.coin_speed
@@ -112,6 +124,18 @@ class Coin(pygame.sprite.Sprite):
             self.rect.y = -width
             self.rect.x = random.randint(5, width - Coin.coin_width - 5)
             self.rect.y = random.randint(-height, 0)
+            self.show()
+
+    def hide(self):
+        self.visible = False
+        transparent_sprite = pygame.Surface((width, height))
+        transparent_sprite = transparent_sprite.convert_alpha()
+        transparent_sprite.fill((0, 0, 0, 0))
+        self.image = transparent_sprite
+
+    def show(self):
+        self.visible = True
+        self.image = Coin.image
 
 
 class DistanceCounter:
@@ -133,16 +157,39 @@ class DistanceCounter:
         self.__init__(self.num)
 
 
+class CoinsCounter:
+    def __init__(self, coins_cnt):
+        self.coins_cnt = str(coins_cnt)
+        coin_ico = Coin.image
+        coin_ico = pygame.transform.scale(coin_ico, (30, 30))
+        font = pygame.font.Font("fonts/distance_counter_font.ttf", 60)
+        text_coord = 0
+        string_rendered = font.render(self.coins_cnt, 1, pygame.Color('#f4de7e'))
+        rect = string_rendered.get_rect()
+        text_coord += 10
+        rect.top = text_coord
+        rect.x = width - rect.right - 20
+        text_coord += rect.height
+        screen.blit(coin_ico, (rect.left - 35, rect.y + 30, 30, 30))
+        screen.blit(string_rendered, rect)
+
+    def update(self, coins_cnt):
+        self.coins_cnt = coins_cnt
+        self.__init__(coins_cnt)
+
+
 def terminate():
+    with open("coins_count.txt", "w") as coins_count:
+        coins_count.write(coins_counter.coins_cnt)
     pygame.quit()
     sys.exit()
 
 
 def show_intro():
-
     bg = pygame.transform.scale(load_image('phonkracing_intro.png'), (width, height))
     screen.blit(bg, (0, 0))
-
+    fps = 60
+    clock = pygame.time.Clock()
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -153,24 +200,88 @@ def show_intro():
         clock.tick(fps)
 
 
-if __name__ == '__main__':
+class MenuButton(pygame.sprite.Sprite):
+    def __init__(self, ico_name, functype, y_coord):
+        super(MenuButton, self).__init__()
+        self.btn_w = 125
+        self.btn_h = 75
+        self.functype = functype
+        self.ico = pygame.transform.scale(load_image(ico_name), (self.btn_w, self.btn_h))
+        self.image = self.ico
+        self.i = ico_name.split(".")[0] + "_hovered.png"
+        self.ico_hovered = pygame.transform.scale(load_image(ico_name.split(".")[0] + "_hovered.png"),
+                                                  (self.btn_w, self.btn_h))
+        self.rect = self.image.get_rect()
+        self.width = self.image.get_width()
+        self.height = self.image.get_height()
+        self.rect.x = width // 2 - self.btn_w // 2
+        self.rect.y = y_coord
+
+
+def new_game():
+    car.distance = 0
+    game()
+
+
+def shop():
+    pass
+
+
+def main_menu():
+    screen.fill(pygame.Color("#305f72"))
+    buttons_group = pygame.sprite.Group()
+
+    functions = {
+        "play": new_game,
+        "quit": terminate,
+        "continue": game,
+        "shop": shop
+    }
+    with open("coins_count.txt", "r") as coins_count:
+        coins_count = int(coins_count.read())
+    play_btn = MenuButton("play_btn.png", "play", 100)
+    continue_btn = MenuButton("continue_btn.png", "continue", 200)
+    shop_btn = MenuButton("shop_btn.png", "shop", 300)
+    quit_btn = MenuButton("quit_btn.png", "quit", 400)
+
+    buttons_group.add(play_btn)
+    buttons_group.add(continue_btn)
+    buttons_group.add(shop_btn)
+    buttons_group.add(quit_btn)
 
     running = True
-    fps = 60
-    clock = pygame.time.Clock()
+    while running:
+        mx, my = pygame.mouse.get_pos()
+        clicked = False
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
 
-    all_sprites = pygame.sprite.Group()
-    car = Car()
-    roads = [Road(0), Road(-height)]
-    coins = [Coin(), Coin(), Coin()]
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    clicked = True
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    terminate()
 
-    [all_sprites.add(road) for road in roads]
-    [all_sprites.add(coin) for coin in coins]
-    all_sprites.add(car)
-    dist_counter = DistanceCounter(0)
+        for sprite in buttons_group.sprites():
+            if sprite.rect.collidepoint((mx, my)):
+                sprite.image = sprite.ico_hovered
+                if clicked:
+                    functions[sprite.functype]()
+                    return
+            else:
+                sprite.image = sprite.ico
+
+        buttons_group.draw(screen)
+        coins_counter.update(coins_count)
+        clock.tick(fps)
+        pygame.display.flip()
+
+
+def game():
+    running = True
     dx = angle = 0
-
-    show_intro()  # заставка
 
     while running:
         screen.fill((0, 0, 0))
@@ -187,6 +298,12 @@ if __name__ == '__main__':
 
                 if keys[pygame.K_LEFT] and keys[pygame.K_RIGHT]:
                     dx = 0
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        with open("coins_count.txt", "w") as coins_count:
+                            coins_count.write(coins_counter.coins_cnt)
+                        main_menu()
+                        return
 
             if event.type == pygame.KEYUP:
                 keys = pygame.key.get_pressed()
@@ -215,7 +332,26 @@ if __name__ == '__main__':
         clock.tick(fps)
         pygame.display.flip()
 
-    pygame.quit()
+    main_menu()
+
+
+all_sprites = pygame.sprite.Group()
+car = Car()
+roads = [Road(0), Road(-height)]
+coins = [Coin(), Coin(), Coin()]
+
+[all_sprites.add(road) for road in roads]
+[all_sprites.add(coin) for coin in coins]
+all_sprites.add(car)
+dist_counter = DistanceCounter(0)
+
+with open("coins_count.txt", "r") as coins_count:
+    coins_count = int(coins_count.read())
+    coins_counter = CoinsCounter(coins_count)
+
+if __name__ == '__main__':
+    show_intro()
+    main_menu()
 
 # # Created by Sergey Yaksanov at 10.12.2020
 # Copyright © 2020 Yakser. All rights reserved.

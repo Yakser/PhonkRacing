@@ -9,6 +9,7 @@ size = width, height = 800, 800
 screen = pygame.display.set_mode(size)
 fps = 60
 running = True
+game_running = False
 clock = pygame.time.Clock()
 
 
@@ -240,13 +241,20 @@ def main_menu():
     }
     with open("coins_count.txt", "r") as coins_count:
         coins_count = int(coins_count.read())
-    play_btn = MenuButton("play_btn.png", "play", 100)
-    continue_btn = MenuButton("continue_btn.png", "continue", 200)
-    shop_btn = MenuButton("shop_btn.png", "shop", 300)
-    quit_btn = MenuButton("quit_btn.png", "quit", 400)
+    dy = 100
+    play_btn = MenuButton("play_btn.png", "play", dy)
+
+    dy += 100
+    if car.distance:
+        continue_btn = MenuButton("continue_btn.png", "continue", dy)
+        buttons_group.add(continue_btn)
+        dy += 100
+    shop_btn = MenuButton("shop_btn.png", "shop", dy)
+    dy += 100
+    quit_btn = MenuButton("quit_btn.png", "quit", dy)
 
     buttons_group.add(play_btn)
-    buttons_group.add(continue_btn)
+
     buttons_group.add(shop_btn)
     buttons_group.add(quit_btn)
 
@@ -281,14 +289,14 @@ def main_menu():
 
 
 def game():
-    running = True
+    game_running = True
     dx = angle = 0
 
-    while running:
+    while game_running:
         screen.fill((0, 0, 0))
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                game_running = False
             if event.type == pygame.KEYDOWN:
                 keys = pygame.key.get_pressed()
                 if keys[pygame.K_RIGHT]:

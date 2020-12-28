@@ -57,6 +57,50 @@ class Road(pygame.sprite.Sprite):
             self.rect.y = -width
 
 
+class Traffic(pygame.sprite.Sprite):
+    n = random.choice(['2', '3', '4', '5'])
+    image = pygame.transform.scale(load_image(f"traffic{n}.png"), (9 * 15, 16 * 15))  # 16x9
+    traffic_width = image.get_width()
+
+    def __init__(self, *group):
+        super().__init__(*group)
+        self.image = Traffic.image
+        self.coin_speed = 7
+        self.width = self.image.get_width()
+        self.height = self.image.get_height()
+        self.rect = self.image.get_rect()
+        self.rect.x = random.choice([40, 235, 440, 640])
+        self.rect.y = random.randint(-height * 5, - height * 2)
+        while pygame.sprite.spritecollideany(self, traffics_group):
+            if pygame.sprite.spritecollideany(self, traffics_group) == self:
+                break
+            self.rect.x = random.choice([40, 235, 440, 640])
+            self.rect.y = random.randint(-height * 5, - height * 2)
+
+        self.visible = True
+
+    def update(self, *args):
+        self.rect.y += self.coin_speed
+        if self.rect.y >= height:
+            self.rect.y = -width * 3
+            self.rect.x = random.choice([40, 235, 440, 640])
+            self.rect.y = random.randint(-height * 3, - height)
+            self.show()
+
+    def hide(self):
+        self.visible = False
+        transparent_sprite = pygame.Surface((width, height))
+        transparent_sprite = transparent_sprite.convert_alpha()
+        transparent_sprite.fill((0, 0, 0, 0))
+        self.image = transparent_sprite
+
+    def show(self):
+        n = random.choice(['2', '3', '4', '5'])
+        img = pygame.transform.scale(load_image(f"traffic{n}.png"), (9 * 15, 16 * 15))  # 16x9
+        self.visible = True
+        self.image = img
+
+
 class Car(pygame.sprite.Sprite):
     image = load_image("car.png")
     image = pygame.transform.scale(image, (9 * 15, 16 * 15))  # 16x9
@@ -74,11 +118,11 @@ class Car(pygame.sprite.Sprite):
         self.distance = 0
         self.distance_counter = DistanceCounter(0)
         self.coins_cnt = 0
+        self.is_alive = True
         with open("coins_count.txt", "r") as coins_count:
             self.coins_cnt = int(coins_count.read())
 
     def update(self, dx, angle):
-
         self.rect.x += dx
         self.distance += 1
         self.distance_counter.update(self.distance)
@@ -90,9 +134,13 @@ class Car(pygame.sprite.Sprite):
             self.rect.x = 0
         self.image = pygame.transform.rotate(Car.image, angle)
         collided_coin = pygame.sprite.spritecollideany(self, coins)
+        collided_traffic = pygame.sprite.spritecollideany(self, traffics)
         if collided_coin and collided_coin.visible:
             self.coins_cnt += 1
             collided_coin.hide()
+        if collided_traffic:
+            self.is_alive = False
+
         coins_counter.update(self.coins_cnt)
 
     def reset(self):
@@ -383,8 +431,15 @@ def game():
 
         [road.update() for road in roads]
         [coin.update() for coin in coins]
+        [traffic.update() for traffic in traffics]
         all_sprites.draw(screen)
+        traffics_group.draw(screen)
+        car_group.draw(screen)
         car.update(dx, angle)
+        if not car.is_alive:
+            car.__init__()
+            [traffic.__init__() for traffic in traffics]
+            game_running = False
 
         clock.tick(fps)
         pygame.display.flip()
@@ -393,13 +448,19 @@ def game():
 
 
 all_sprites = pygame.sprite.Group()
+traffics_group = pygame.sprite.Group()
+car_group = pygame.sprite.Group()
+
 car = Car()
 roads = [Road(0), Road(-height)]
 coins = [Coin(), Coin(), Coin()]
+traffics = [Traffic(), Traffic(), Traffic()]
 
 [all_sprites.add(road) for road in roads]
 [all_sprites.add(coin) for coin in coins]
-all_sprites.add(car)
+[traffics_group.add(traffic) for traffic in traffics]
+
+car_group.add(car)
 dist_counter = DistanceCounter(0)
 
 with open("coins_count.txt", "r") as coins_count:

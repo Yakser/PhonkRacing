@@ -223,6 +223,10 @@ def new_game():
     game()
 
 
+def shop():
+    pass
+
+
 def main_menu():
     screen.fill(pygame.Color("#305f72"))
     buttons_group = pygame.sprite.Group()
@@ -230,15 +234,19 @@ def main_menu():
     functions = {
         "play": new_game,
         "quit": terminate,
-        "continue": game
+        "continue": game,
+        "shop": shop
     }
-
+    with open("coins_count.txt", "r") as coins_count:
+        coins_count = int(coins_count.read())
     play_btn = MenuButton("play_btn.png", "play", 100)
     continue_btn = MenuButton("continue_btn.png", "continue", 200)
-    quit_btn = MenuButton("quit_btn.png", "quit", 300)
+    shop_btn = MenuButton("shop_btn.png", "shop", 300)
+    quit_btn = MenuButton("quit_btn.png", "quit", 400)
 
     buttons_group.add(play_btn)
     buttons_group.add(continue_btn)
+    buttons_group.add(shop_btn)
     buttons_group.add(quit_btn)
 
     running = True
@@ -266,7 +274,7 @@ def main_menu():
                 sprite.image = sprite.ico
 
         buttons_group.draw(screen)
-
+        coins_counter.update(coins_count)
         clock.tick(fps)
         pygame.display.flip()
 
@@ -292,6 +300,8 @@ def game():
                     dx = 0
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
+                        with open("coins_count.txt", "w") as coins_count:
+                            coins_count.write(coins_counter.coins_cnt)
                         main_menu()
                         return
 

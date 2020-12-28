@@ -186,7 +186,7 @@ def terminate():
 
 
 def show_intro():
-    bg = pygame.transform.scale(load_image('phonkracing_intro.png'), (width, height))
+    bg = pygame.transform.scale(load_image('bg.png'), (width, height))
     screen.blit(bg, (0, 0))
     fps = 60
     clock = pygame.time.Clock()
@@ -228,7 +228,8 @@ def shop():
 
 
 def main_menu():
-    screen.fill(pygame.Color("#305f72"))
+    bg = pygame.transform.scale(load_image('menu_bg.png'), (width, height))
+    screen.blit(bg, (0, 0))
     buttons_group = pygame.sprite.Group()
 
     functions = {

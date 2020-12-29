@@ -437,6 +437,9 @@ def game():
         car_group.draw(screen)
         car.update(dx, angle)
         if not car.is_alive:
+            with open("coins_count.txt", "w") as coins_count:
+                coins_count.write(coins_counter.coins_cnt)
+
             car.__init__()
             [traffic.__init__() for traffic in traffics]
             game_running = False

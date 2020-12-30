@@ -300,6 +300,7 @@ def shop():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+                terminate()
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
@@ -361,6 +362,7 @@ def main_menu():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+                terminate()
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
@@ -392,6 +394,7 @@ def game():
         screen.fill((0, 0, 0))
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                terminate()
                 game_running = False
             if event.type == pygame.KEYDOWN:
                 keys = pygame.key.get_pressed()

@@ -396,9 +396,31 @@ def main_menu():
 def death_screen():
     bg = pygame.transform.scale(load_image('menu_bg.png'), (width, height))
     screen.blit(bg, (0, 0))
+    buttons_group = pygame.sprite.Group()
 
+    functions = {
+        "play": new_game,
+        "quit": terminate,
+        "continue": game,
+        "shop": shop
+    }
     with open("coins_count.txt", "r") as coins_count:
         coins_count = int(coins_count.read())
+    dy = 100
+    play_btn = MenuButton("play_btn.png", "play", dy)
+
+    dy += 100
+    revive_btn = MenuButton("revive_btn.png", "continue", dy)
+    buttons_group.add(revive_btn)
+    dy += 100
+    shop_btn = MenuButton("shop_btn.png", "shop", dy)
+    dy += 100
+    quit_btn = MenuButton("quit_btn.png", "quit", dy)
+
+    buttons_group.add(play_btn)
+    buttons_group.add(revive_btn)
+    buttons_group.add(shop_btn)
+    buttons_group.add(quit_btn)
 
     running = True
     while running:
@@ -416,6 +438,16 @@ def death_screen():
                 if event.key == pygame.K_ESCAPE:
                     terminate()
 
+        for sprite in buttons_group.sprites():
+            if sprite.rect.collidepoint((mx, my)):
+                sprite.image = sprite.ico_hovered
+                if clicked:
+                    functions[sprite.functype]()
+                    return
+            else:
+                sprite.image = sprite.ico
+
+        buttons_group.draw(screen)
         coins_counter.update(coins_count)
         clock.tick(fps)
         pygame.display.flip()

@@ -137,8 +137,8 @@ class Car(pygame.sprite.Sprite):
         self.image = pygame.transform.rotate(Car.image, angle)
         collided_coins = [pygame.sprite.collide_mask(self, coin) for coin in coins]
         if any(collided_coins):
-            collected_coins = [coins[i] for i in range(len(coins)) if collided_coins[i]]
-            for collided_coin in collected_coins:
+            collided_coins_sprites = [coins[i] for i in range(len(coins)) if collided_coins[i]]
+            for collided_coin in collided_coins_sprites:
                 if collided_coin and collided_coin.visible:
                     self.coins_cnt += 1
                     collided_coin.hide()

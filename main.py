@@ -65,12 +65,13 @@ class Traffic(pygame.sprite.Sprite):
     def __init__(self, *group):
         super().__init__(*group)
         self.image = Traffic.image
-        self.coin_speed = 7
+        self.speed = 7
         self.width = self.image.get_width()
         self.height = self.image.get_height()
         self.rect = self.image.get_rect()
         self.rect.x = random.choice([40, 235, 440, 640])
         self.rect.y = random.randint(-height * 5, - height * 2)
+        self.mask = pygame.mask.from_surface(self.image)
         while pygame.sprite.spritecollideany(self, traffics_group):
             if pygame.sprite.spritecollideany(self, traffics_group) == self:
                 break
@@ -80,7 +81,7 @@ class Traffic(pygame.sprite.Sprite):
         self.visible = True
 
     def update(self, *args):
-        self.rect.y += self.coin_speed
+        self.rect.y += self.speed
         if self.rect.y >= height:
             self.rect.y = -width * 3
             self.rect.x = random.choice([40, 235, 440, 640])
@@ -119,6 +120,7 @@ class Car(pygame.sprite.Sprite):
         self.distance_counter = DistanceCounter(0)
         self.coins_cnt = 0
         self.is_alive = True
+        self.mask = pygame.mask.from_surface(self.image)
         with open("coins_count.txt", "r") as coins_count:
             self.coins_cnt = int(coins_count.read())
 
@@ -133,12 +135,16 @@ class Car(pygame.sprite.Sprite):
         if self.rect.x <= 0:
             self.rect.x = 0
         self.image = pygame.transform.rotate(Car.image, angle)
-        collided_coin = pygame.sprite.spritecollideany(self, coins)
-        collided_traffic = pygame.sprite.spritecollideany(self, traffics)
-        if collided_coin and collided_coin.visible:
-            self.coins_cnt += 1
-            collided_coin.hide()
-        if collided_traffic:
+        collided_coins = [pygame.sprite.collide_mask(self, coin) for coin in coins]
+        if any(collided_coins):
+            collected_coins = [coins[i] for i in range(len(coins)) if collided_coins[i]]
+            for collided_coin in collected_coins:
+                if collided_coin and collided_coin.visible:
+                    self.coins_cnt += 1
+                    collided_coin.hide()
+
+        collided_traffics = [pygame.sprite.collide_mask(self, traffic) for traffic in traffics]
+        if any(collided_traffics):
             self.is_alive = False
 
         coins_counter.update(self.coins_cnt)
@@ -165,6 +171,7 @@ class Coin(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = random.randint(0, width - Coin.coin_width)
         self.rect.y = random.randint(-height, height - Coin.coin_width)
+        self.mask = pygame.mask.from_surface(self.image)
         self.visible = True
 
     def update(self, *args):

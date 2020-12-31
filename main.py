@@ -393,6 +393,34 @@ def main_menu():
         pygame.display.flip()
 
 
+def death_screen():
+    bg = pygame.transform.scale(load_image('menu_bg.png'), (width, height))
+    screen.blit(bg, (0, 0))
+
+    with open("coins_count.txt", "r") as coins_count:
+        coins_count = int(coins_count.read())
+
+    running = True
+    while running:
+        mx, my = pygame.mouse.get_pos()
+        clicked = False
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+                terminate()
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    clicked = True
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    terminate()
+
+        coins_counter.update(coins_count)
+        clock.tick(fps)
+        pygame.display.flip()
+
+
 def game():
     game_running = True
     dx = angle = 0
@@ -453,6 +481,7 @@ def game():
             car.__init__()
             [traffic.__init__() for traffic in traffics]
             game_running = False
+            death_screen()
 
         clock.tick(fps)
         pygame.display.flip()

@@ -157,7 +157,7 @@ class Traffic(pygame.sprite.Sprite):
 
 
 class Car(pygame.sprite.Sprite):
-    image = load_image("car.png")
+    image = load_image("car_blue.png")
     image = pygame.transform.scale(image, (9 * 15, 16 * 15))  # 16x9
 
     def __init__(self, *group):
@@ -180,7 +180,7 @@ class Car(pygame.sprite.Sprite):
             self.coins_cnt = int(coins_count.read())
         with open("lives_count.txt", "r") as lives_count:
             self.lives_cnt = int(lives_count.read())
-
+ 
     def update(self, dx, angle):
         self.rect.x += dx
         self.distance += 1
@@ -301,6 +301,10 @@ class CoinsCounter:
         self.coins_cnt = coins_cnt
         self.__init__(coins_cnt)
 
+    # def draw(self):
+    #     screen.blit(self.coin_ico, (self.rect.left - 35, 85, 30, 30))
+    #     screen.blit(self.string_rendered, (self.rect.left, 60, 30, 30))
+
 
 class LivesCounter:
     def __init__(self, lives_cnt):
@@ -331,8 +335,10 @@ class LivesCounter:
     def draw(self):
         screen.blit(self.heart_ico, (self.rect.left - 35, 85, 30, 30))
         screen.blit(self.string_rendered, (self.rect.left, 60, 30, 30))
-        # screen.blit(self.heart_ico, (self.rect.left - 35, self.rect.y + 30, 30, 30))
-        # screen.blit(self.string_rendered, self.rect)
+
+    def add_life(self):
+        self.lives_cnt = int(self.lives_cnt) + 1
+        self.update(self.lives_cnt)
 
 
 def terminate():
@@ -367,7 +373,7 @@ class MenuButton(pygame.sprite.Sprite):
         self.functype = functype
         self.ico = pygame.transform.scale(load_image(ico_name), (self.btn_w, self.btn_h))
         self.image = self.ico
-        self.i = ico_name.split(".")[0] + "_hovered.png"
+        self.ico_name = ico_name
         self.ico_hovered = pygame.transform.scale(load_image(ico_name.split(".")[0] + "_hovered.png"),
                                                   (self.btn_w, self.btn_h))
         self.rect = self.image.get_rect()
@@ -375,6 +381,24 @@ class MenuButton(pygame.sprite.Sprite):
         self.height = self.image.get_height()
         self.rect.x = width // 2 - self.btn_w // 2
         self.rect.y = y_coord
+        self.y_coord = y_coord
+
+    def resize(self, w, h):
+        self.btn_w = w
+        self.btn_h = h
+        self.ico = pygame.transform.scale(load_image(self.ico_name), (self.btn_w, self.btn_h))
+        self.image = self.ico
+        self.ico_hovered = pygame.transform.scale(load_image(self.ico_name.split(".")[0] + "_hovered.png"),
+                                                  (self.btn_w, self.btn_h))
+        self.rect = self.image.get_rect()
+        self.width = self.image.get_width()
+        self.height = self.image.get_height()
+        self.rect.x = width // 2 - self.btn_w // 2
+        self.rect.y = self.y_coord
+
+    def move(self, x, y):
+        self.rect.x = x
+        self.rect.y = y
 
 
 def new_game():
@@ -382,21 +406,45 @@ def new_game():
     game()
 
 
+def buy_heart():
+    coins_count = int(coins_counter.coins_cnt)
+    if coins_count >= 200:
+        coins_count -= 200
+        lives_counter.add_life()
+        coins_counter.update(coins_count)
+        with open("coins_count.txt", "w") as coins_cnt:
+            coins_cnt.write(str(coins_count))
+        car.coins_cnt = coins_count
+    shop()
+
+
 def shop():
     bg = pygame.transform.scale(load_image('menu_bg.png'), (width, height))
     screen.blit(bg, (0, 0))
-    buttons_group = pygame.sprite.Group()
 
+    buy_block_size = 250
+
+    buy_heart_block = pygame.transform.scale(load_image('buy_heart.png'), (buy_block_size, buy_block_size))
+    screen.blit(buy_heart_block, (width // 2 - buy_block_size // 2, 250))
+
+    buttons_group = pygame.sprite.Group()
+    close_btn = MenuButton("close_btn.png", "main_menu", 0)
+    close_btn.resize(100, 100)
+    close_btn.move(15, 0)
+    buy_heart_btn = MenuButton("buy_heart_btn.png", "buy_heart", 250)
+    buy_heart_btn.resize(buy_block_size, buy_block_size)
+    buttons_group.add(close_btn)
+    buttons_group.add(buy_heart_btn)
     functions = {
         "play": new_game,
         "quit": terminate,
         "continue": game,
-        "shop": shop
+        "shop": shop,
+        "main_menu": main_menu,
+        "buy_heart": buy_heart
     }
     with open("coins_count.txt", "r") as coins_count:
         coins_count = int(coins_count.read())
-    with open("lives_count.txt", "r") as lives_count:
-        lives_count = int(lives_count.read())
 
     font = pygame.font.Font("fonts/distance_counter_font.ttf", 90)
     string_rendered = font.render("SHOP", 1, pygame.Color('#f4de7e'))
@@ -433,6 +481,7 @@ def shop():
 
         buttons_group.draw(screen)
         coins_counter.update(coins_count)
+        lives_counter.draw()
         clock.tick(fps)
         pygame.display.flip()
 
@@ -463,7 +512,6 @@ def main_menu():
     quit_btn = MenuButton("quit_btn.png", "quit", dy)
 
     buttons_group.add(play_btn)
-
     buttons_group.add(shop_btn)
     buttons_group.add(quit_btn)
 
@@ -580,7 +628,6 @@ def game():
     game_running = True
     dx = angle = 0
     dist_counter.update(car.distance)
-
     while game_running:
         screen.fill((0, 0, 0))
         for event in pygame.event.get():
@@ -602,7 +649,7 @@ def game():
                         with open("coins_count.txt", "w") as coins_count:
                             coins_count.write(coins_counter.coins_cnt)
                         with open("lives_count", "w") as lives_count:
-                            lives_count.write(lives_counter.lives_cnt)
+                            lives_count.write(str(lives_counter.lives_cnt))
                         main_menu()
                         return
 

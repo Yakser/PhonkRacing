@@ -17,7 +17,6 @@ clock = pygame.time.Clock()
 def load_image(name, colorkey=None):
     try:
         fullname = os.path.join('sprites', name)
-        # если файл не существует, то выходим
         if not os.path.isfile(fullname):
             print(f"Файл с изображением '{fullname}' не найден")
             sys.exit()
@@ -95,8 +94,8 @@ class Road(pygame.sprite.Sprite):
 
 
 class Traffic(pygame.sprite.Sprite):
-    n = random.choice(['2', '3', '4', '5'])
-    image = pygame.transform.scale(load_image(f"traffic{n}.png"), (9 * 15, 16 * 15))  # 16x9
+    image = pygame.transform.scale(
+        load_image(f"traffic{random.choice(['1', '2', '3', '4', '5'])}.png"), (9 * 15, 16 * 15))  # 16x9
     traffic_width = image.get_width()
 
     def __init__(self, *group):
@@ -133,52 +132,8 @@ class Traffic(pygame.sprite.Sprite):
         self.image = transparent_sprite
 
     def show(self):
-        n = random.choice(['1', '2', '3', '4', '5'])
-        img = pygame.transform.scale(load_image(f"traffic{n}.png"), (9 * 15, 16 * 15))  # 16x9
-        self.visible = True
-        self.image = img
-
-
-class Traffic(pygame.sprite.Sprite):
-    n = random.choice(['1', '2', '3', '4', '5'])
-    image = pygame.transform.scale(load_image(f"traffic{n}.png"), (9 * 15, 16 * 15))  # 16x9
-    traffic_width = image.get_width()
-
-    def __init__(self, *group):
-        super().__init__(*group)
-        self.image = Traffic.image
-        self.speed = 7
-        self.width = self.image.get_width()
-        self.height = self.image.get_height()
-        self.rect = self.image.get_rect()
-        self.rect.x = random.choice([40, 235, 440, 640])
-        self.rect.y = random.randint(-height * 5, - height * 2)
-        self.mask = pygame.mask.from_surface(self.image)
-        while pygame.sprite.spritecollideany(self, traffics_group):
-            if pygame.sprite.spritecollideany(self, traffics_group) == self:
-                break
-            self.rect.x = random.choice([40, 235, 440, 640])
-            self.rect.y = random.randint(-height * 5, - height * 2)
-        self.visible = True
-
-    def update(self, *args):
-        self.rect.y += self.speed
-        if self.rect.y >= height:
-            self.rect.y = -width * 3
-            self.rect.x = random.choice([40, 235, 440, 640])
-            self.rect.y = random.randint(-height * 3, - height)
-            self.show()
-
-    def hide(self):
-        self.visible = False
-        transparent_sprite = pygame.Surface((width, height))
-        transparent_sprite = transparent_sprite.convert_alpha()
-        transparent_sprite.fill((0, 0, 0, 0))
-        self.image = transparent_sprite
-
-    def show(self):
-        n = random.choice(['1', '2', '3', '4', '5'])
-        img = pygame.transform.scale(load_image(f"traffic{n}.png"), (9 * 15, 16 * 15))  # 16x9
+        img = pygame.transform.scale(
+            load_image(f"traffic{random.choice(['1', '2', '3', '4', '5'])}.png"), (9 * 15, 16 * 15))  # 16x9
         self.visible = True
         self.image = img
 

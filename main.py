@@ -2,6 +2,7 @@ import pygame
 import os
 import sys
 import random
+import csv
 
 pygame.init()
 pygame.display.set_caption('PhonkRacing')
@@ -33,6 +34,32 @@ def load_image(name, colorkey=None):
     except:
         print("Произошла ошибка!")
         sys.exit()
+
+
+def get_scores():
+    with open('scores.csv', 'r', encoding="utf8") as csvfile:
+        reader = csv.reader(csvfile, delimiter=';', quotechar='"')
+        return [int(row[0]) for row in reader]
+
+
+def write_score(score):
+    scores = get_scores()
+    with open('scores.csv', 'w', newline='') as csvfile:
+        writer = csv.writer(
+            csvfile, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        for nscore in (sorted(scores + [score], reverse=True))[:3]:
+            writer.writerow([nscore])
+
+
+def blit_text(text, color, size, ycoord, xcoord=None):
+    font = pygame.font.Font("fonts/distance_counter_font.ttf", size)
+    string_rendered = font.render(text, 1, pygame.Color(color))
+    rect = string_rendered.get_rect()
+    rect.top = ycoord
+    rect.x = width // 2 - rect.width // 2
+    if xcoord:
+        rect.x = xcoord
+    screen.blit(string_rendered, rect)
 
 
 class Image(pygame.sprite.Sprite):
@@ -106,7 +133,7 @@ class Traffic(pygame.sprite.Sprite):
         self.image = transparent_sprite
 
     def show(self):
-        n = random.choice(['2', '3', '4', '5'])
+        n = random.choice(['1', '2', '3', '4', '5'])
         img = pygame.transform.scale(load_image(f"traffic{n}.png"), (9 * 15, 16 * 15))  # 16x9
         self.visible = True
         self.image = img
@@ -180,7 +207,7 @@ class Car(pygame.sprite.Sprite):
             self.coins_cnt = int(coins_count.read())
         with open("lives_count.txt", "r") as lives_count:
             self.lives_cnt = int(lives_count.read())
- 
+
     def update(self, dx, angle):
         self.rect.x += dx
         self.distance += 1
@@ -287,10 +314,9 @@ class CoinsCounter:
         coin_ico = Coin.image
         coin_ico = pygame.transform.scale(coin_ico, (30, 30))
         font = pygame.font.Font("fonts/distance_counter_font.ttf", 60)
-        text_coord = 0
         string_rendered = font.render(self.coins_cnt, 1, pygame.Color('#f4de7e'))
         rect = string_rendered.get_rect()
-        text_coord += 10
+        text_coord = 10
         rect.top = text_coord
         rect.x = width - rect.right - 20
         text_coord += rect.height
@@ -300,10 +326,6 @@ class CoinsCounter:
     def update(self, coins_cnt):
         self.coins_cnt = coins_cnt
         self.__init__(coins_cnt)
-
-    # def draw(self):
-    #     screen.blit(self.coin_ico, (self.rect.left - 35, 85, 30, 30))
-    #     screen.blit(self.string_rendered, (self.rect.left, 60, 30, 30))
 
 
 class LivesCounter:
@@ -402,6 +424,7 @@ class MenuButton(pygame.sprite.Sprite):
 
 
 def new_game():
+    write_score(car.distance // fps * 5)
     car.distance = 0
     game()
 
@@ -429,7 +452,7 @@ def shop():
 
     buttons_group = pygame.sprite.Group()
     close_btn = MenuButton("close_btn.png", "main_menu", 0)
-    close_btn.resize(100, 100)
+    close_btn.resize(65, 65)
     close_btn.move(15, 0)
     buy_heart_btn = MenuButton("buy_heart_btn.png", "buy_heart", 250)
     buy_heart_btn.resize(buy_block_size, buy_block_size)
@@ -446,12 +469,66 @@ def shop():
     with open("coins_count.txt", "r") as coins_count:
         coins_count = int(coins_count.read())
 
-    font = pygame.font.Font("fonts/distance_counter_font.ttf", 90)
-    string_rendered = font.render("SHOP", 1, pygame.Color('#f4de7e'))
-    rect = string_rendered.get_rect()
-    rect.top = 10
-    rect.x = width // 2 - rect.width // 2
-    screen.blit(string_rendered, rect)
+    blit_text("SHOP", '#f4de7e', 90, 10)
+
+    running = True
+    while running:
+        mx, my = pygame.mouse.get_pos()
+        clicked = False
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+                terminate()
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    clicked = True
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    main_menu()
+                    return
+
+        for sprite in buttons_group.sprites():
+            if sprite.rect.collidepoint((mx, my)):
+                sprite.image = sprite.ico_hovered
+                if clicked:
+                    functions[sprite.functype]()
+                    return
+            else:
+                sprite.image = sprite.ico
+
+        buttons_group.draw(screen)
+        coins_counter.update(coins_count)
+        lives_counter.draw()
+        clock.tick(fps)
+        pygame.display.flip()
+
+
+def scores():
+    bg = pygame.transform.scale(load_image('menu_bg.png'), (width, height))
+    screen.blit(bg, (0, 0))
+
+    buttons_group = pygame.sprite.Group()
+    close_btn = MenuButton("close_btn.png", "main_menu", 0)
+    close_btn.resize(65, 65)
+    close_btn.move(15, 0)
+
+    buttons_group.add(close_btn)
+
+    functions = {
+        "play": new_game,
+        "quit": terminate,
+        "continue": game,
+        "shop": shop,
+        "main_menu": main_menu,
+    }
+
+    blit_text("SCORES", '#f4de7e', 90, 10)
+    dy = 150
+    scores = get_scores()
+    blit_text(f"1 - {scores[0]}m", '#f4de7e', 70, dy)
+    blit_text(f"2 - {scores[1]}m", '#f1d1b5', 60, dy + 70)
+    blit_text(f"3 - {scores[2]}m", '#f1d1b5', 60, dy + 140)
 
     running = True
     while running:
@@ -494,7 +571,8 @@ def main_menu():
         "play": new_game,
         "quit": terminate,
         "continue": game,
-        "shop": shop
+        "shop": shop,
+        "scores": scores
     }
     with open("coins_count.txt", "r") as coins_count:
         coins_count = int(coins_count.read())
@@ -509,10 +587,13 @@ def main_menu():
         dy += 100
     shop_btn = MenuButton("shop_btn.png", "shop", dy)
     dy += 100
+    scores_btn = MenuButton("scores_btn.png", "scores", dy)
+    dy += 100
     quit_btn = MenuButton("quit_btn.png", "quit", dy)
 
     buttons_group.add(play_btn)
     buttons_group.add(shop_btn)
+    buttons_group.add(scores_btn)
     buttons_group.add(quit_btn)
 
     running = True
@@ -554,6 +635,7 @@ def revive():
         game()
     else:
         lives_counter.draw()
+        write_score(car.distance // fps * 5)
         car.__init__()
 
 
@@ -627,7 +709,6 @@ def death_screen():
 def game():
     game_running = True
     dx = angle = 0
-    dist_counter.update(car.distance)
     while game_running:
         screen.fill((0, 0, 0))
         for event in pygame.event.get():
@@ -713,7 +794,6 @@ traffics = [Traffic(), Traffic(), Traffic()]
 [traffics_group.add(traffic) for traffic in traffics]
 
 car_group.add(car)
-dist_counter = DistanceCounter(0)
 
 with open("coins_count.txt", "r") as coins_count:
     coins_count = int(coins_count.read())

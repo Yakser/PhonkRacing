@@ -17,7 +17,6 @@ clock = pygame.time.Clock()
 def load_image(name, colorkey=None):
     try:
         fullname = os.path.join('sprites', name)
-        # если файл не существует, то выходим
         if not os.path.isfile(fullname):
             print(f"Файл с изображением '{fullname}' не найден")
             sys.exit()
@@ -49,6 +48,27 @@ def write_score(score):
             csvfile, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         for nscore in (sorted(scores + [score], reverse=True))[:3]:
             writer.writerow([nscore])
+
+
+
+def write_coins():
+    with open("coins_count.txt", "w") as coins_count:
+        coins_count.write(coins_counter.coins_cnt)
+
+
+def get_coins():
+    with open("coins_count.txt", "r") as coins_count:
+        return int(coins_count.read())
+
+
+def get_lives():
+    with open("lives_count.txt", "r") as lives_count:
+        return int(lives_count.read())
+
+
+def write_lives():
+    with open("lives_count.txt", "w") as lives_count:
+        lives_count.write(str(lives_counter.lives_cnt))
 
 
 def blit_text(text, color, size, ycoord, xcoord=None):
@@ -95,8 +115,8 @@ class Road(pygame.sprite.Sprite):
 
 
 class Traffic(pygame.sprite.Sprite):
-    n = random.choice(['2', '3', '4', '5'])
-    image = pygame.transform.scale(load_image(f"traffic{n}.png"), (9 * 15, 16 * 15))  # 16x9
+    image = pygame.transform.scale(
+        load_image(f"traffic{random.choice(['1', '2', '3', '4', '5'])}.png"), (9 * 15, 16 * 15))  # 16x9
     traffic_width = image.get_width()
 
     def __init__(self, *group):
@@ -120,9 +140,13 @@ class Traffic(pygame.sprite.Sprite):
     def update(self, *args):
         self.rect.y += self.speed
         if self.rect.y >= height:
-            self.rect.y = -width * 3
             self.rect.x = random.choice([40, 235, 440, 640])
             self.rect.y = random.randint(-height * 3, - height)
+            while pygame.sprite.spritecollideany(self, traffics_group):
+                if pygame.sprite.spritecollideany(self, traffics_group) == self:
+                    break
+                self.rect.x = random.choice([40, 235, 440, 640])
+                self.rect.y = random.randint(-height * 3, - height)
             self.show()
 
     def hide(self):
@@ -133,52 +157,8 @@ class Traffic(pygame.sprite.Sprite):
         self.image = transparent_sprite
 
     def show(self):
-        n = random.choice(['1', '2', '3', '4', '5'])
-        img = pygame.transform.scale(load_image(f"traffic{n}.png"), (9 * 15, 16 * 15))  # 16x9
-        self.visible = True
-        self.image = img
-
-
-class Traffic(pygame.sprite.Sprite):
-    n = random.choice(['1', '2', '3', '4', '5'])
-    image = pygame.transform.scale(load_image(f"traffic{n}.png"), (9 * 15, 16 * 15))  # 16x9
-    traffic_width = image.get_width()
-
-    def __init__(self, *group):
-        super().__init__(*group)
-        self.image = Traffic.image
-        self.speed = 7
-        self.width = self.image.get_width()
-        self.height = self.image.get_height()
-        self.rect = self.image.get_rect()
-        self.rect.x = random.choice([40, 235, 440, 640])
-        self.rect.y = random.randint(-height * 5, - height * 2)
-        self.mask = pygame.mask.from_surface(self.image)
-        while pygame.sprite.spritecollideany(self, traffics_group):
-            if pygame.sprite.spritecollideany(self, traffics_group) == self:
-                break
-            self.rect.x = random.choice([40, 235, 440, 640])
-            self.rect.y = random.randint(-height * 5, - height * 2)
-        self.visible = True
-
-    def update(self, *args):
-        self.rect.y += self.speed
-        if self.rect.y >= height:
-            self.rect.y = -width * 3
-            self.rect.x = random.choice([40, 235, 440, 640])
-            self.rect.y = random.randint(-height * 3, - height)
-            self.show()
-
-    def hide(self):
-        self.visible = False
-        transparent_sprite = pygame.Surface((width, height))
-        transparent_sprite = transparent_sprite.convert_alpha()
-        transparent_sprite.fill((0, 0, 0, 0))
-        self.image = transparent_sprite
-
-    def show(self):
-        n = random.choice(['1', '2', '3', '4', '5'])
-        img = pygame.transform.scale(load_image(f"traffic{n}.png"), (9 * 15, 16 * 15))  # 16x9
+        img = pygame.transform.scale(
+            load_image(f"traffic{random.choice(['1', '2', '3', '4', '5'])}.png"), (9 * 15, 16 * 15))  # 16x9
         self.visible = True
         self.image = img
 
@@ -203,10 +183,9 @@ class Car(pygame.sprite.Sprite):
         self.lives_cnt = 0
         self.is_alive = True
         self.mask = pygame.mask.from_surface(self.image)
-        with open("coins_count.txt", "r") as coins_count:
-            self.coins_cnt = int(coins_count.read())
-        with open("lives_count.txt", "r") as lives_count:
-            self.lives_cnt = int(lives_count.read())
+
+        self.coins_cnt = get_coins()
+        self.lives_cnt = get_lives()
 
     def update(self, dx, angle):
         self.rect.x += dx
@@ -364,10 +343,9 @@ class LivesCounter:
 
 
 def terminate():
-    with open("coins_count.txt", "w") as coins_count:
-        coins_count.write(coins_counter.coins_cnt)
-    with open("lives_count.txt", "w") as lives_count:
-        lives_count.write(str(lives_counter.lives_cnt))
+    write_coins()
+    write_lives()
+    write_score(car.distance // fps * 5)
     pygame.quit()
     sys.exit()
 
@@ -435,8 +413,7 @@ def buy_heart():
         coins_count -= 200
         lives_counter.add_life()
         coins_counter.update(coins_count)
-        with open("coins_count.txt", "w") as coins_cnt:
-            coins_cnt.write(str(coins_count))
+        write_coins()
         car.coins_cnt = coins_count
     shop()
 
@@ -451,7 +428,7 @@ def shop():
     screen.blit(buy_heart_block, (width // 2 - buy_block_size // 2, 250))
 
     buttons_group = pygame.sprite.Group()
-    close_btn = MenuButton("close_btn.png", "main_menu", 0)
+    close_btn = MenuButton("close_btn.png", "menu", 0)
     close_btn.resize(65, 65)
     close_btn.move(15, 0)
     buy_heart_btn = MenuButton("buy_heart_btn.png", "buy_heart", 250)
@@ -463,11 +440,10 @@ def shop():
         "quit": terminate,
         "continue": game,
         "shop": shop,
-        "main_menu": main_menu,
+        "menu": to_menu,
         "buy_heart": buy_heart
     }
-    with open("coins_count.txt", "r") as coins_count:
-        coins_count = int(coins_count.read())
+    coins_count = get_coins()
 
     blit_text("SHOP", '#f4de7e', 90, 10)
 
@@ -527,8 +503,8 @@ def scores():
     dy = 150
     scores = get_scores()
     blit_text(f"1 - {scores[0]}m", '#f4de7e', 70, dy)
-    blit_text(f"2 - {scores[1]}m", '#f1d1b5', 60, dy + 70)
-    blit_text(f"3 - {scores[2]}m", '#f1d1b5', 60, dy + 140)
+    blit_text(f"2 - {scores[1]}m", '#f1d1b5', 70, dy + 70)
+    blit_text(f"3 - {scores[2]}m", '#f1d1b5', 70, dy + 140)
 
     running = True
     while running:
@@ -557,8 +533,6 @@ def scores():
                 sprite.image = sprite.ico
 
         buttons_group.draw(screen)
-        coins_counter.update(coins_count)
-        lives_counter.draw()
         clock.tick(fps)
         pygame.display.flip()
 
@@ -574,8 +548,7 @@ def main_menu():
         "shop": shop,
         "scores": scores
     }
-    with open("coins_count.txt", "r") as coins_count:
-        coins_count = int(coins_count.read())
+    coins_count = get_coins()
 
     dy = 100
     play_btn = MenuButton("play_btn.png", "play", dy)
@@ -629,14 +602,27 @@ def main_menu():
 
 def revive():
     lives_count = int(lives_counter.lives_cnt)
+    coins_cnt = int(coins_counter.coins_cnt)
     if lives_count > 0:
         lives_counter.update(lives_count - 1)
         lives_counter.draw()
+        game()
+    elif coins_cnt >= 200:
+        coins_cnt -= 200
+        coins_counter.update(str(coins_cnt))
+        car.coins_cnt = coins_cnt
+        write_coins()
         game()
     else:
         lives_counter.draw()
         write_score(car.distance // fps * 5)
         car.__init__()
+
+
+def to_menu():
+    write_score(car.distance // fps * 5)
+    car.distance = 0
+    main_menu()
 
 
 def death_screen():
@@ -649,14 +635,13 @@ def death_screen():
     functions = {
         "play": new_game,
         "quit": terminate,
-        "continue": game,
         "shop": shop,
-        "revive": revive
+        "revive": revive,
+        "menu": to_menu
     }
-    with open("coins_count.txt", "r") as coins_count:
-        coins_count = int(coins_count.read())
-    with open("lives_count.txt", "r") as lives_count:
-        lives_count = int(lives_count.read())
+    coins_count = get_coins()
+    lives_count = get_lives()
+
     lives_counter.update(lives_count)
     dy = 300
     play_btn = MenuButton("play_btn.png", "play", dy)
@@ -665,12 +650,15 @@ def death_screen():
     revive_btn = MenuButton("revive_btn.png", "revive", dy)
     buttons_group.add(revive_btn)
     dy += 100
+    menu_btn = MenuButton("menu_btn.png", "menu", dy)
+    dy += 100
     shop_btn = MenuButton("shop_btn.png", "shop", dy)
     dy += 100
     quit_btn = MenuButton("quit_btn.png", "quit", dy)
 
     buttons_group.add(play_btn)
     buttons_group.add(revive_btn)
+    buttons_group.add(menu_btn)
     buttons_group.add(shop_btn)
     buttons_group.add(quit_btn)
 
@@ -727,10 +715,8 @@ def game():
                     dx = 0
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
-                        with open("coins_count.txt", "w") as coins_count:
-                            coins_count.write(coins_counter.coins_cnt)
-                        with open("lives_count", "w") as lives_count:
-                            lives_count.write(str(lives_counter.lives_cnt))
+                        write_coins()
+                        write_lives()
                         main_menu()
                         return
 
@@ -759,13 +745,12 @@ def game():
         all_sprites.draw(screen)
         coins_group.draw(screen)
         traffics_group.draw(screen)
-        car_group.draw(screen)
         car.update(dx, angle)
+        car_group.draw(screen)
+
         if not car.is_alive:
-            with open("coins_count.txt", "w") as coins_count:
-                coins_count.write(coins_counter.coins_cnt)
-            with open("lives_count.txt", "w") as lives_count:
-                lives_count.write(str(lives_counter.lives_cnt))
+            write_coins()
+            write_lives()
             dist = car.distance
             car.__init__()
             car.distance = dist
@@ -795,13 +780,8 @@ traffics = [Traffic(), Traffic(), Traffic()]
 
 car_group.add(car)
 
-with open("coins_count.txt", "r") as coins_count:
-    coins_count = int(coins_count.read())
-    coins_counter = CoinsCounter(coins_count)
-
-with open("lives_count.txt", "r") as lives_count:
-    lives_count = int(lives_count.read())
-    lives_counter = LivesCounter(lives_count)
+coins_counter = CoinsCounter(get_coins())
+lives_counter = LivesCounter(get_lives())
 
 if __name__ == '__main__':
     show_intro()

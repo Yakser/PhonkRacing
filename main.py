@@ -38,41 +38,60 @@ def load_image(name, colorkey=None):
 
 
 def get_scores():
-    with open('scores.csv', 'r', encoding="utf8") as csvfile:
-        reader = csv.reader(csvfile, delimiter=';', quotechar='"')
-        return [int(row[0]) for row in reader]
+    try:
+        with open('scores.csv', 'r', encoding="utf8") as csvfile:
+            reader = csv.reader(csvfile, delimiter=';', quotechar='"')
+            return [int(row[0]) for row in reader]
+    except:
+        return [0, 0, 0]
 
 
-def write_score(score):
-    scores = get_scores()
-    with open('scores.csv', 'w', newline='') as csvfile:
-        writer = csv.writer(
-            csvfile, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        for nscore in (sorted(scores + [score], reverse=True))[:3]:
-            writer.writerow([nscore])
+def write_score(score: int):
+    try:
+        scores = get_scores()
+        with open('scores.csv', 'w', newline='') as csvfile:
+            writer = csv.writer(
+                csvfile, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            for nscore in (sorted(scores + [score], reverse=True))[:3]:
+                writer.writerow([nscore])
+    except:
+        write_score(0)
 
 
 def write_coins():
-    with open("coins_count.txt", "w") as coins_count:
-        coins_count.write(coins_counter.coins_cnt)
+    try:
+        with open("coins_count.txt", "w") as coins_count:
+            coins_count.write(coins_counter.coins_cnt)
+    except:
+        with open("coins_count.txt", "w") as coins_count:
+            coins_count.write("0")
 
 
 def get_coins():
-    with open("coins_count.txt", "r") as coins_count:
-        return int(coins_count.read())
+    try:
+        with open("coins_count.txt", "r") as coins_count:
+            return int(coins_count.read())
+    except:
+        return 0
 
 
 def get_lives():
-    with open("lives_count.txt", "r") as lives_count:
-        return int(lives_count.read())
+    try:
+        with open("lives_count.txt", "r") as lives_count:
+            return int(lives_count.read())
+    except:
+        return 0
 
 
 def write_lives():
-    with open("lives_count.txt", "w") as lives_count:
-        lives_count.write(str(lives_counter.lives_cnt))
+    try:
+        with open("lives_count.txt", "w") as lives_count:
+            lives_count.write(str(lives_counter.lives_cnt))
+    except:
+        lives_count.write("0")
 
 
-def blit_text(text, color, size, ycoord, xcoord=None):
+def blit_text(text: str, color: str, size: int, ycoord: int, xcoord: int = None):
     font = pygame.font.Font("fonts/distance_counter_font.ttf", size)
     string_rendered = font.render(text, 1, pygame.Color(color))
     rect = string_rendered.get_rect()
@@ -84,7 +103,7 @@ def blit_text(text, color, size, ycoord, xcoord=None):
 
 
 class Image(pygame.sprite.Sprite):
-    def __init__(self, pos, filename, size, *group):
+    def __init__(self, pos: tuple, filename: str, size: tuple, *group):
         super().__init__(*group)
         self.image = load_image(filename)
         self.image = pygame.transform.scale(self.image, size)
@@ -98,7 +117,7 @@ class Road(pygame.sprite.Sprite):
     image = pygame.transform.scale(image, (width, width))
     height = image.get_height()
 
-    def __init__(self, pos_y, *group):
+    def __init__(self, pos_y: int, *group):
         super().__init__(*group)
         self.image = Road.image
         self.width = self.image.get_width()
@@ -128,19 +147,18 @@ class Traffic(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect()
         self.rect.x = random.choice([40, 235, 440, 640])
-        self.rect.y = random.randint(-height * 3, -height)
-        self.spawn()
+        self.rect.y = random.randint(-height * 3, -2 * height)
 
     def spawn(self):
         self.rect.x = random.choice([40, 235, 440, 640])
-        self.rect.y = random.randint(-height * 3, - height * 2)
-        while pygame.sprite.spritecollideany(self, traffics_group):
-            if pygame.sprite.spritecollideany(self, traffics_group) == self:
-                break
+        self.rect.y = random.randint(-height * 3, - height)
+        collided = pygame.sprite.spritecollideany(self, traffics_group)
+        while collided != self:
             self.rect.x = random.choice([40, 235, 440, 640])
-            self.rect.y = random.randint(-height * 3, - height * 2)
+            self.rect.y = random.randint(-height * 3, - height)
+            collided = pygame.sprite.spritecollideany(self, traffics_group)
 
-    def update(self, *args):
+    def update(self):
         self.rect.y += self.speed
         if self.rect.y >= height:
             self.spawn()
@@ -158,9 +176,8 @@ class Car(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = height // 2 - self.width // 2
         self.rect.y = width - self.height // 2 - 150
-        self.speed_x = 7
-        self.speed_y = 5
         self.distance = 0
+        self.speed_x = 7
         self.distance_counter = DistanceCounter(0)
         self.coins_cnt = 0
         self.lives_cnt = 0
@@ -170,7 +187,7 @@ class Car(pygame.sprite.Sprite):
         self.coins_cnt = get_coins()
         self.lives_cnt = get_lives()
 
-    def update(self, dx, angle):
+    def update(self, dx: int, angle: int):
         self.rect.x += dx
         self.distance += 1
         self.distance_counter.update(self.distance)
@@ -215,26 +232,23 @@ class Coin(pygame.sprite.Sprite):
         self.width = self.image.get_width()
         self.height = self.image.get_height()
         self.rect = self.image.get_rect()
-        self.rect.x = random.randint(0, width - Coin.coin_width)
+        self.rect.x = random.randint(10, width - Coin.coin_width)
         self.rect.y = random.randint(-3 * height, -height)
-        while pygame.sprite.spritecollideany(self, coins_group):
-            if pygame.sprite.spritecollideany(self, coins_group) == self:
-                self.rect.x = random.randint(5, width - Coin.coin_width - 5)
-                self.rect.y = random.randint(-3 * height, -height)
-                break
+        self.mask = pygame.mask.from_surface(self.image)
+
         self.mask = pygame.mask.from_surface(self.image)
         self.visible = True
 
-    def update(self, *args):
+    def update(self):
         self.rect.y += self.coin_speed
         if self.rect.y >= height:
-            self.rect.y = -width
+
             self.rect.x = random.randint(5, width - Coin.coin_width - 5)
-            self.rect.y = random.randint(-height, 0)
+            self.rect.y = random.randint(-height, -self.height)
             collided = pygame.sprite.spritecollideany(self, coins_group)
             while collided != self:
                 self.rect.x = random.randint(5, width - Coin.coin_width - 5)
-                self.rect.y = random.randint(-height, 0)
+                self.rect.y = random.randint(-height, -self.height)
                 collided = pygame.sprite.spritecollideany(self, coins_group)
 
             self.show()
@@ -252,46 +266,40 @@ class Coin(pygame.sprite.Sprite):
 
 
 class DistanceCounter:
-    def __init__(self, num):
-        self.num = str(num)
+    def __init__(self, dist: int):
+        self.dist = str(dist)
+        self.font = pygame.font.Font("fonts/distance_counter_font.ttf", 60)
+        self.update(dist)
 
-        font = pygame.font.Font("fonts/distance_counter_font.ttf", 60)
-        text_coord = 50
-        string_rendered = font.render(f"{self.num} m", 1, pygame.Color('white'))
+    def update(self, dist: int):
+        self.dist = str(dist // fps * 5)
+        string_rendered = self.font.render(f"{self.dist} m", 1, pygame.Color('white'))
         rect = string_rendered.get_rect()
-        text_coord += 10
-        rect.top = text_coord
+        rect.top = 60
         rect.x = width - rect.right - 20
-        text_coord += rect.height
         screen.blit(string_rendered, rect)
-
-    def update(self, dist):
-        self.num = str(dist // fps * 5)
-        self.__init__(self.num)
 
 
 class CoinsCounter:
-    def __init__(self, coins_cnt):
+    def __init__(self, coins_cnt: int):
         self.coins_cnt = str(coins_cnt)
         coin_ico = Coin.image
         coin_ico = pygame.transform.scale(coin_ico, (40, 40))
         font = pygame.font.Font("fonts/distance_counter_font.ttf", 60)
         string_rendered = font.render(self.coins_cnt, 1, pygame.Color('#f4de7e'))
         rect = string_rendered.get_rect()
-        text_coord = 10
-        rect.top = text_coord
+        rect.top = 10
         rect.x = width - rect.right - 20
-        text_coord += rect.height
         screen.blit(coin_ico, (rect.left - 45, rect.y + 20, 40, 40))
         screen.blit(string_rendered, rect)
 
-    def update(self, coins_cnt):
+    def update(self, coins_cnt: int):
         self.coins_cnt = coins_cnt
         self.__init__(coins_cnt)
 
 
 class LivesCounter:
-    def __init__(self, lives_cnt):
+    def __init__(self, lives_cnt: int):
         self.lives_cnt = str(lives_cnt)
         heart_ico = load_image("heart_ico.png")
         self.heart_ico = pygame.transform.scale(heart_ico, (30, 30))
@@ -306,7 +314,7 @@ class LivesCounter:
         screen.blit(self.heart_ico, (self.rect.left - 35, 0, 30, 30))
         screen.blit(self.string_rendered, (self.rect.left - 35, 0, 30, 30))
 
-    def update(self, lives_cnt):
+    def update(self, lives_cnt: int):
         self.lives_cnt = lives_cnt
         text_coord = 0
         self.string_rendered = self.font.render(str(self.lives_cnt), 1, pygame.Color('#f18c8e'))
@@ -349,7 +357,7 @@ def show_intro():
 
 
 class MenuButton(pygame.sprite.Sprite):
-    def __init__(self, ico_name, functype, y_coord):
+    def __init__(self, ico_name: str, functype: str, y_coord: int):
         super(MenuButton, self).__init__()
         self.btn_w = 125
         self.btn_h = 75
@@ -366,7 +374,7 @@ class MenuButton(pygame.sprite.Sprite):
         self.rect.y = y_coord
         self.y_coord = y_coord
 
-    def resize(self, w, h):
+    def resize(self, w: int, h: int):
         self.btn_w = w
         self.btn_h = h
         self.ico = pygame.transform.scale(load_image(self.ico_name), (self.btn_w, self.btn_h))
@@ -379,7 +387,7 @@ class MenuButton(pygame.sprite.Sprite):
         self.rect.x = width // 2 - self.btn_w // 2
         self.rect.y = self.y_coord
 
-    def move(self, x, y):
+    def move(self, x: int, y: int):
         self.rect.x = x
         self.rect.y = y
 
@@ -484,7 +492,7 @@ def scores():
 
     blit_text("SCORES", '#f4de7e', 90, 10)
     dy = 150
-    scores = get_scores()
+    scores = get_scores() + [0, 0, 0]
     blit_text(f"1 - {scores[0]}m", '#f4de7e', 70, dy)
     blit_text(f"2 - {scores[1]}m", '#f1d1b5', 70, dy + 70)
     blit_text(f"3 - {scores[2]}m", '#f1d1b5', 70, dy + 140)
@@ -592,7 +600,7 @@ def revive():
         game()
     elif coins_cnt >= heart_cost:
         coins_cnt -= heart_cost
-        coins_counter.update(str(coins_cnt))
+        coins_counter.update(coins_cnt)
         car.coins_cnt = coins_cnt
         write_coins()
         game()

@@ -714,8 +714,9 @@ def game():
         all_sprites.draw(screen)
         coins_group.draw(screen)
         traffics_group.draw(screen)
-        car_group.draw(screen)
         car.update(dx, angle)
+        car_group.draw(screen)
+
         if not car.is_alive:
             with open("coins_count.txt", "w") as coins_count:
                 coins_count.write(coins_counter.coins_cnt)

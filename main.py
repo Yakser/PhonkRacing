@@ -140,9 +140,13 @@ class Traffic(pygame.sprite.Sprite):
     def update(self, *args):
         self.rect.y += self.speed
         if self.rect.y >= height:
-            self.rect.y = -width * 3
             self.rect.x = random.choice([40, 235, 440, 640])
             self.rect.y = random.randint(-height * 3, - height)
+            while pygame.sprite.spritecollideany(self, traffics_group):
+                if pygame.sprite.spritecollideany(self, traffics_group) == self:
+                    break
+                self.rect.x = random.choice([40, 235, 440, 640])
+                self.rect.y = random.randint(-height * 3, - height)
             self.show()
 
     def hide(self):
@@ -341,6 +345,7 @@ class LivesCounter:
 def terminate():
     write_coins()
     write_lives()
+    write_score(car.distance // fps * 5)
     pygame.quit()
     sys.exit()
 
@@ -423,7 +428,7 @@ def shop():
     screen.blit(buy_heart_block, (width // 2 - buy_block_size // 2, 250))
 
     buttons_group = pygame.sprite.Group()
-    close_btn = MenuButton("close_btn.png", "main_menu", 0)
+    close_btn = MenuButton("close_btn.png", "menu", 0)
     close_btn.resize(65, 65)
     close_btn.move(15, 0)
     buy_heart_btn = MenuButton("buy_heart_btn.png", "buy_heart", 250)
@@ -435,7 +440,7 @@ def shop():
         "quit": terminate,
         "continue": game,
         "shop": shop,
-        "main_menu": main_menu,
+        "menu": to_menu,
         "buy_heart": buy_heart
     }
     coins_count = get_coins()
@@ -498,8 +503,8 @@ def scores():
     dy = 150
     scores = get_scores()
     blit_text(f"1 - {scores[0]}m", '#f4de7e', 70, dy)
-    blit_text(f"2 - {scores[1]}m", '#f1d1b5', 60, dy + 70)
-    blit_text(f"3 - {scores[2]}m", '#f1d1b5', 60, dy + 140)
+    blit_text(f"2 - {scores[1]}m", '#f1d1b5', 70, dy + 70)
+    blit_text(f"3 - {scores[2]}m", '#f1d1b5', 70, dy + 140)
 
     running = True
     while running:
@@ -614,6 +619,12 @@ def revive():
         car.__init__()
 
 
+def to_menu():
+    write_score(car.distance // fps * 5)
+    car.distance = 0
+    main_menu()
+
+
 def death_screen():
     bg = pygame.transform.scale(load_image('menu_bg.png'), (width, height))
     screen.blit(bg, (0, 0))
@@ -624,9 +635,9 @@ def death_screen():
     functions = {
         "play": new_game,
         "quit": terminate,
-        "continue": game,
         "shop": shop,
-        "revive": revive
+        "revive": revive,
+        "menu": to_menu
     }
     coins_count = get_coins()
     lives_count = get_lives()
@@ -639,12 +650,15 @@ def death_screen():
     revive_btn = MenuButton("revive_btn.png", "revive", dy)
     buttons_group.add(revive_btn)
     dy += 100
+    menu_btn = MenuButton("menu_btn.png", "menu", dy)
+    dy += 100
     shop_btn = MenuButton("shop_btn.png", "shop", dy)
     dy += 100
     quit_btn = MenuButton("quit_btn.png", "quit", dy)
 
     buttons_group.add(play_btn)
     buttons_group.add(revive_btn)
+    buttons_group.add(menu_btn)
     buttons_group.add(shop_btn)
     buttons_group.add(quit_btn)
 

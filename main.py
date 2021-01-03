@@ -6,12 +6,14 @@ import csv
 
 pygame.init()
 pygame.display.set_caption('PhonkRacing')
+pygame.display.set_icon(pygame.image.load(os.path.join('sprites', "ico.png")))
 size = width, height = 800, 800
 screen = pygame.display.set_mode(size)
 fps = 60
 running = True
 game_running = False
 clock = pygame.time.Clock()
+heart_cost = 200
 
 
 def load_image(name, colorkey=None):
@@ -48,7 +50,6 @@ def write_score(score):
             csvfile, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         for nscore in (sorted(scores + [score], reverse=True))[:3]:
             writer.writerow([nscore])
-
 
 
 def write_coins():
@@ -115,52 +116,34 @@ class Road(pygame.sprite.Sprite):
 
 
 class Traffic(pygame.sprite.Sprite):
-    image = pygame.transform.scale(
-        load_image(f"traffic{random.choice(['1', '2', '3', '4', '5'])}.png"), (9 * 15, 16 * 15))  # 16x9
-    traffic_width = image.get_width()
+    images = [pygame.transform.scale(load_image(f"traffic{i}.png"), (9 * 15, 16 * 15))
+              for i in range(1, 6)]
 
     def __init__(self, *group):
         super().__init__(*group)
-        self.image = Traffic.image
+        self.image = random.choice(Traffic.images)
         self.speed = 7
-        self.width = self.image.get_width()
+        self.visible = True
         self.height = self.image.get_height()
+        self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect()
         self.rect.x = random.choice([40, 235, 440, 640])
-        self.rect.y = random.randint(-height * 5, - height * 2)
-        self.mask = pygame.mask.from_surface(self.image)
+        self.rect.y = random.randint(-height * 3, -height)
+        self.spawn()
+
+    def spawn(self):
+        self.rect.x = random.choice([40, 235, 440, 640])
+        self.rect.y = random.randint(-height * 3, - height * 2)
         while pygame.sprite.spritecollideany(self, traffics_group):
             if pygame.sprite.spritecollideany(self, traffics_group) == self:
                 break
             self.rect.x = random.choice([40, 235, 440, 640])
-            self.rect.y = random.randint(-height * 5, - height * 2)
-
-        self.visible = True
+            self.rect.y = random.randint(-height * 3, - height * 2)
 
     def update(self, *args):
         self.rect.y += self.speed
         if self.rect.y >= height:
-            self.rect.x = random.choice([40, 235, 440, 640])
-            self.rect.y = random.randint(-height * 3, - height)
-            while pygame.sprite.spritecollideany(self, traffics_group):
-                if pygame.sprite.spritecollideany(self, traffics_group) == self:
-                    break
-                self.rect.x = random.choice([40, 235, 440, 640])
-                self.rect.y = random.randint(-height * 3, - height)
-            self.show()
-
-    def hide(self):
-        self.visible = False
-        transparent_sprite = pygame.Surface((width, height))
-        transparent_sprite = transparent_sprite.convert_alpha()
-        transparent_sprite.fill((0, 0, 0, 0))
-        self.image = transparent_sprite
-
-    def show(self):
-        img = pygame.transform.scale(
-            load_image(f"traffic{random.choice(['1', '2', '3', '4', '5'])}.png"), (9 * 15, 16 * 15))  # 16x9
-        self.visible = True
-        self.image = img
+            self.spawn()
 
 
 class Car(pygame.sprite.Sprite):
@@ -274,7 +257,7 @@ class DistanceCounter:
 
         font = pygame.font.Font("fonts/distance_counter_font.ttf", 60)
         text_coord = 50
-        string_rendered = font.render(self.num, 1, pygame.Color('white'))
+        string_rendered = font.render(f"{self.num} m", 1, pygame.Color('white'))
         rect = string_rendered.get_rect()
         text_coord += 10
         rect.top = text_coord
@@ -291,7 +274,7 @@ class CoinsCounter:
     def __init__(self, coins_cnt):
         self.coins_cnt = str(coins_cnt)
         coin_ico = Coin.image
-        coin_ico = pygame.transform.scale(coin_ico, (30, 30))
+        coin_ico = pygame.transform.scale(coin_ico, (40, 40))
         font = pygame.font.Font("fonts/distance_counter_font.ttf", 60)
         string_rendered = font.render(self.coins_cnt, 1, pygame.Color('#f4de7e'))
         rect = string_rendered.get_rect()
@@ -299,7 +282,7 @@ class CoinsCounter:
         rect.top = text_coord
         rect.x = width - rect.right - 20
         text_coord += rect.height
-        screen.blit(coin_ico, (rect.left - 35, rect.y + 30, 30, 30))
+        screen.blit(coin_ico, (rect.left - 45, rect.y + 20, 40, 40))
         screen.blit(string_rendered, rect)
 
     def update(self, coins_cnt):
@@ -409,8 +392,8 @@ def new_game():
 
 def buy_heart():
     coins_count = int(coins_counter.coins_cnt)
-    if coins_count >= 200:
-        coins_count -= 200
+    if coins_count >= heart_cost:
+        coins_count -= heart_cost
         lives_counter.add_life()
         coins_counter.update(coins_count)
         write_coins()
@@ -607,8 +590,8 @@ def revive():
         lives_counter.update(lives_count - 1)
         lives_counter.draw()
         game()
-    elif coins_cnt >= 200:
-        coins_cnt -= 200
+    elif coins_cnt >= heart_cost:
+        coins_cnt -= heart_cost
         coins_counter.update(str(coins_cnt))
         car.coins_cnt = coins_cnt
         write_coins()

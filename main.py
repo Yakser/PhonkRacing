@@ -607,7 +607,8 @@ def revive():
     else:
         lives_counter.draw()
         write_score(car.distance // fps * 5)
-        car.__init__()
+        car.distance = 0
+
 
 
 def to_menu():

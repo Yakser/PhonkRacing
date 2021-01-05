@@ -4,16 +4,15 @@ import sys
 import random
 import csv
 
+
 pygame.init()
 pygame.display.set_caption('PhonkRacing')
 pygame.display.set_icon(pygame.image.load(os.path.join('sprites', "ico.png")))
 size = width, height = 800, 800
 screen = pygame.display.set_mode(size)
 fps = 60
-running = True
-game_running = False
-clock = pygame.time.Clock()
 heart_cost = 200
+clock = pygame.time.Clock()
 
 
 def load_image(name, colorkey=None):
@@ -126,10 +125,17 @@ class Road(pygame.sprite.Sprite):
         self.rect.x = height // 2 - self.width // 2
         self.rect.y = pos_y
         self.pos_y = pos_y
-        self.road_speed = 10
+
+        # self.max_road_speed = 10
+        self.road_speed = 600
+        self.i = 0
 
     def update(self):
-        self.rect.y += self.road_speed
+        # self.road_speed += 1
+        # self.road_speed = min(self.road_speed, self.max_road_speed)
+
+        self.rect.y += int(self.road_speed / fps)
+
         if self.rect.y >= height:
             self.rect.y = -width
 
@@ -141,7 +147,7 @@ class Traffic(pygame.sprite.Sprite):
     def __init__(self, *group):
         super().__init__(*group)
         self.image = random.choice(Traffic.images)
-        self.speed = 7
+        self.speed = 450 / fps
         self.visible = True
         self.height = self.image.get_height()
         self.mask = pygame.mask.from_surface(self.image)
@@ -177,7 +183,7 @@ class Car(pygame.sprite.Sprite):
         self.rect.x = height // 2 - self.width // 2
         self.rect.y = width - self.height // 2 - 150
         self.distance = 0
-        self.speed_x = 7
+        self.speed_x = 450 / fps
         self.distance_counter = DistanceCounter(0)
         self.coins_cnt = 0
         self.lives_cnt = 0
@@ -228,7 +234,7 @@ class Coin(pygame.sprite.Sprite):
     def __init__(self, *group):
         super().__init__(*group)
         self.image = Coin.image
-        self.coin_speed = 10
+        self.coin_speed = 600 / fps
         self.width = self.image.get_width()
         self.height = self.image.get_height()
         self.rect = self.image.get_rect()
@@ -344,7 +350,6 @@ def terminate():
 def show_intro():
     bg = pygame.transform.scale(load_image('bg.png'), (width, height))
     screen.blit(bg, (0, 0))
-    fps = 60
     clock = pygame.time.Clock()
     while True:
         for event in pygame.event.get():
@@ -352,8 +357,8 @@ def show_intro():
                 terminate()
             if event.type == pygame.KEYUP or event.type == pygame.MOUSEBUTTONDOWN:
                 return
-        pygame.display.flip()
         clock.tick(fps)
+        pygame.display.flip()
 
 
 class MenuButton(pygame.sprite.Sprite):
@@ -566,7 +571,6 @@ def main_menu():
         clicked = False
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
                 terminate()
 
             if event.type == pygame.MOUSEBUTTONDOWN:
@@ -607,7 +611,7 @@ def revive():
     else:
         lives_counter.draw()
         write_score(car.distance // fps * 5)
-        car.__init__()
+        car.distance = 0
 
 
 def to_menu():
@@ -693,7 +697,6 @@ def game():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
-                game_running = False
             if event.type == pygame.KEYDOWN:
                 keys = pygame.key.get_pressed()
                 if keys[pygame.K_RIGHT]:
@@ -716,14 +719,14 @@ def game():
                 if not (keys[pygame.K_LEFT] or keys[pygame.K_RIGHT]):
                     dx = 0
         if dx > 0:
-            angle -= 1
+            angle -= 60 / fps
         elif dx < 0:
-            angle += 1
+            angle += 60 / fps
         else:
             if angle > 0:
-                angle -= 1
+                angle -= 60 / fps
             elif angle < 0:
-                angle += 1
+                angle += 60 / fps
 
         if angle < 0:
             angle = max(-5, angle)
@@ -733,7 +736,7 @@ def game():
         [road.update() for road in roads]
         [coin.update() for coin in coins]
         [traffic.update() for traffic in traffics]
-        all_sprites.draw(screen)
+        road_group.draw(screen)
         coins_group.draw(screen)
         traffics_group.draw(screen)
         car.update(dx, angle)
@@ -755,7 +758,7 @@ def game():
     main_menu()
 
 
-all_sprites = pygame.sprite.Group()
+road_group = pygame.sprite.Group()
 coins_group = pygame.sprite.Group()
 traffics_group = pygame.sprite.Group()
 car_group = pygame.sprite.Group()
@@ -765,7 +768,7 @@ roads = [Road(0), Road(-height)]
 coins = [Coin(), Coin(), Coin()]
 traffics = [Traffic(), Traffic(), Traffic()]
 
-[all_sprites.add(road) for road in roads]
+[road_group.add(road) for road in roads]
 [coins_group.add(coin) for coin in coins]
 [traffics_group.add(traffic) for traffic in traffics]
 

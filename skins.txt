@@ -1,0 +1,2 @@
+car_blue.png
+car_pink.png

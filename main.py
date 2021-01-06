@@ -445,6 +445,7 @@ def buy_skin(cost, skin, grid):
     with open("selected_skin.txt", "w") as f:
         f.write(skin)
     selected_skin = skin
+    car.set_skin(skin)
     [block.__init__(block.block_filename, block.item_filename, block.functype) for block in grid.table]
 
     shop()

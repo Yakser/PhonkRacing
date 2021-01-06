@@ -4,7 +4,6 @@ import sys
 import random
 import csv
 
-
 pygame.init()
 pygame.display.set_caption('PhonkRacing')
 pygame.display.set_icon(pygame.image.load(os.path.join('sprites', "ico.png")))
@@ -13,6 +12,7 @@ screen = pygame.display.set_mode(size)
 fps = 60
 heart_cost = 200
 clock = pygame.time.Clock()
+PIXEL_FONT = pygame.font.Font("fonts/pixel.otf", 60)
 
 
 def load_image(name, colorkey=None):
@@ -193,17 +193,16 @@ class Car(pygame.sprite.Sprite):
         self.coins_cnt = get_coins()
         self.lives_cnt = get_lives()
 
-    def update(self, dx: int, angle: int):
-        self.rect.x += dx
+    def update(self, x: int, angle: int):
+        self.rect.x = x
         self.distance += 1
         self.distance_counter.update(self.distance)
-        self.image = pygame.transform.rotate(Car.image, angle)
-
         if self.rect.x + self.width >= width:
             self.rect.x = width - self.width
         if self.rect.x <= 0:
             self.rect.x = 0
         self.image = pygame.transform.rotate(Car.image, angle)
+
         collided_coins = [pygame.sprite.collide_mask(self, coin) for coin in coins]
         if any(collided_coins):
             collided_coins_sprites = [coins[i] for i in range(len(coins)) if collided_coins[i]]
@@ -310,13 +309,10 @@ class LivesCounter:
         heart_ico = load_image("heart_ico.png")
         self.heart_ico = pygame.transform.scale(heart_ico, (30, 30))
         self.font = pygame.font.Font("fonts/distance_counter_font.ttf", 60)
-        text_coord = 0
         self.string_rendered = self.font.render(self.lives_cnt, 1, pygame.Color('#f18c8e'))
         self.rect = self.string_rendered.get_rect()
-        text_coord += 10
-        self.rect.top = text_coord
+        self.rect.top = 10
         self.rect.x = width - self.rect.right - 20
-        text_coord += self.rect.height
         screen.blit(self.heart_ico, (self.rect.left - 35, 0, 30, 30))
         screen.blit(self.string_rendered, (self.rect.left - 35, 0, 30, 30))
 
@@ -584,15 +580,14 @@ def main_menu():
             if sprite.rect.collidepoint((mx, my)):
                 sprite.image = sprite.ico_hovered
                 if clicked:
-                    functions[sprite.functype]()
-                    return
+                    return functions[sprite.functype]()
             else:
                 sprite.image = sprite.ico
         buttons_group.draw(screen)
         coins_counter.update(coins_count)
         lives_counter.draw()
-        clock.tick(fps)
         pygame.display.flip()
+        clock.tick(fps)
 
 
 def revive():
@@ -690,48 +685,50 @@ def death_screen():
 
 
 def game():
+    x = car.rect.x
     game_running = True
-    dx = angle = 0
+    angle = 0
+    max_speed = 7
+    max_angle = 5
+    accel_x = x_change = 0
+
     while game_running:
-        screen.fill((0, 0, 0))
+        # screen.fill((0, 0, 0))
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
-            if event.type == pygame.KEYDOWN:
-                keys = pygame.key.get_pressed()
-                if keys[pygame.K_RIGHT]:
-                    dx = car.speed_x
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    accel_x = -.4
+                elif event.key == pygame.K_RIGHT:
+                    accel_x = .4
+                if event.key == pygame.K_ESCAPE:
+                    write_coins()
+                    write_lives()
 
-                if keys[pygame.K_LEFT]:
-                    dx = -car.speed_x
+                    return main_menu()
+            elif event.type == pygame.KEYUP:
+                if event.key in (pygame.K_LEFT, pygame.K_RIGHT):
+                    accel_x = 0
 
-                if keys[pygame.K_LEFT] and keys[pygame.K_RIGHT]:
-                    dx = 0
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
-                        write_coins()
-                        write_lives()
-                        main_menu()
-                        return
+        x_change += accel_x
+        if abs(x_change) >= max_speed:
+            x_change = x_change / abs(x_change) * max_speed
+        angle_change = -x_change / 10
 
-            if event.type == pygame.KEYUP:
-                keys = pygame.key.get_pressed()
-                if not (keys[pygame.K_LEFT] or keys[pygame.K_RIGHT]):
-                    dx = 0
-        if dx > 0:
-            angle -= 60 / fps
-        elif dx < 0:
-            angle += 60 / fps
-        else:
-            if angle > 0:
-                angle -= 60 / fps
-            elif angle < 0:
-                angle += 60 / fps
+        if angle > 0 and accel_x > 0:
+            angle *= .87
 
-        if angle < 0:
-            angle = max(-5, angle)
-        elif angle > 0:
-            angle = min(5, angle)
+        elif angle < 0 and accel_x < 0:
+            angle *= .87
+
+        if accel_x == 0:
+            x_change *= .87
+            angle *= .87
+        x += x_change
+        angle += angle_change
+        if abs(angle) >= max_angle:
+            angle = angle / abs(angle) * max_angle
 
         [road.update() for road in roads]
         [coin.update() for coin in coins]
@@ -739,7 +736,7 @@ def game():
         road_group.draw(screen)
         coins_group.draw(screen)
         traffics_group.draw(screen)
-        car.update(dx, angle)
+        car.update(x, angle)
         car_group.draw(screen)
 
         if not car.is_alive:

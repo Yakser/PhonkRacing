@@ -413,6 +413,12 @@ class MenuButton(pygame.sprite.Sprite):
         self.rect.y = y
 
 
+class ShopButton(MenuButton):
+    def __init__(self, ico_name: str, functype: str, y_coord: int, x_coord=None, skin=None):
+        super(ShopButton, self).__init__(ico_name, functype, y_coord, x_coord)
+        self.skin = skin
+
+
 def new_game():
     write_score(car.distance // fps * 5)
     car.distance = 0
@@ -432,6 +438,7 @@ def buy_heart():
 
 def buy_skin(cost, skin, grid):
     global skins, selected_skin
+    need_to_set_skin = False
     if skin not in skins:
         coins_count = int(coins_counter.coins_cnt)
         if coins_count >= cost:
@@ -442,10 +449,15 @@ def buy_skin(cost, skin, grid):
             car.set_skin(skin)
             #  TODO добавление скинов в список
             skins += [skin]
-    with open("selected_skin.txt", "w") as f:
-        f.write(skin)
-    selected_skin = skin
-    [block.__init__(block.block_filename, block.item_filename, block.functype) for block in grid.table]
+            need_to_set_skin = True
+    else:
+        need_to_set_skin = True
+    if need_to_set_skin:
+        with open("selected_skin.txt", "w") as f:
+            f.write(skin)
+        selected_skin = skin
+        car.set_skin(skin)
+        [block.__init__(block.block_filename, block.item_filename, block.functype) for block in grid.table]
 
     shop()
 
@@ -484,16 +496,18 @@ class BuyBlock:
         self.block_filename = block_filename
         self.item_filename = item_filename
         self.functype = functype
+        skin = None
         if "car" in item_filename:
-            skin = item_filename.replace("buy_", "").replace("_btn", "")
+            skin = item_filename.replace("buy_", "").replace("_block", "")
             if skin == selected_skin:
-                block_filename = block_filename[:-4] + "_owned.png"
-                item_filename = item_filename[:-4] + "_owned.png"
+                item_filename = "selected.png"
             elif skin in skins:
-                block_filename = block_filename[:-4] + "_select.png"
-                item_filename = item_filename[:-4] + "_select.png"
+                item_filename = "select.png"
+            else:
+                item_filename = "buy_car_btn.png"
+
         self.block = pygame.transform.scale(load_image(block_filename), (self.buy_block_size, self.buy_block_size))
-        self.button = MenuButton(item_filename, functype, default_y_coord)
+        self.button = ShopButton(item_filename, functype, default_y_coord, skin=skin)
         self.button.resize(self.buy_block_size, self.buy_block_size)
 
 
@@ -503,8 +517,8 @@ def shop():
 
     grid = Grid()
     heart_block = BuyBlock("buy_heart.png", "buy_heart_btn.png", "buy_heart")
-    car_pink_block = BuyBlock("buy_car_pink_btn.png", "buy_car_pink_btn.png", "buy_skin")
-    car_blue_block = BuyBlock("buy_car_blue_btn.png", "buy_car_blue_btn.png", "buy_skin")
+    car_pink_block = BuyBlock("buy_car_pink_block.png", "buy_car_pink_block.png", "buy_skin")
+    car_blue_block = BuyBlock("buy_car_blue_block.png", "buy_car_blue_block.png", "buy_skin")
 
     grid.add(car_blue_block)
     grid.add(heart_block)
@@ -558,14 +572,7 @@ def shop():
             if sprite.rect.collidepoint((mx, my)):
                 sprite.image = sprite.ico_hovered
                 if sprite.functype == "buy_skin":
-                    cnt = 0
-                    skin = ""
-                    for i in sprite.ico_name:
-                        if 1 <= cnt <= 2:
-                            skin += i
-                        if i == "_":
-                            cnt += 1
-                    skin = skin[:-1] + ".png"
+                    skin = sprite.skin
                     args = (skin_cost, skin, grid)
                 if clicked:
                     functions[sprite.functype](*args)

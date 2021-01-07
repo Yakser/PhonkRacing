@@ -1,1 +1,1 @@
-car_pink.png
+car_red.png

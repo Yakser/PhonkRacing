@@ -519,10 +519,12 @@ def shop():
     heart_block = BuyBlock("buy_heart.png", "buy_heart_btn.png", "buy_heart")
     car_pink_block = BuyBlock("buy_car_pink_block.png", "buy_car_pink_block.png", "buy_skin")
     car_blue_block = BuyBlock("buy_car_blue_block.png", "buy_car_blue_block.png", "buy_skin")
+    car_red_block = BuyBlock("buy_car_red_block.png", "buy_car_red_block.png", "buy_skin")
 
-    grid.add(car_blue_block)
     grid.add(heart_block)
+    grid.add(car_blue_block)
     grid.add(car_pink_block)
+    grid.add(car_red_block)
 
     buttons_group = pygame.sprite.Group()
     close_btn = MenuButton("close_btn.png", "menu", 0)

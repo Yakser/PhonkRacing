@@ -4,6 +4,10 @@ import sys
 import random
 import csv
 
+pygame.mixer.init()
+coin_sound = pygame.mixer.Sound('sounds/coin1.mp3')
+click_sound = pygame.mixer.Sound('sounds/click.mp3')
+crash_sound = pygame.mixer.Sound('sounds/crash.mp3')
 pygame.init()
 pygame.display.set_caption('PhonkRacing')
 pygame.display.set_icon(pygame.image.load(os.path.join('sprites', "ico.png")))
@@ -171,7 +175,7 @@ class Traffic(pygame.sprite.Sprite):
         collided = pygame.sprite.spritecollideany(self, traffics_group)
         while collided != self:
             self.rect.x = random.choice([40, 235, 440, 640])
-            self.rect.y = random.randint(-height * 3, - height)
+            self.rect.y = random.randint(-height * 2, - height)
             collided = pygame.sprite.spritecollideany(self, traffics_group)
 
     def update(self):
@@ -218,6 +222,7 @@ class Car(pygame.sprite.Sprite):
             collided_coins_sprites = [coins[i] for i in range(len(coins)) if collided_coins[i]]
             for collided_coin in collided_coins_sprites:
                 if collided_coin and collided_coin.visible:
+                    coin_sound.play()
                     self.coins_cnt += 1
                     collided_coin.hide()
 
@@ -352,6 +357,7 @@ class LivesCounter:
 
 
 def terminate():
+    click_sound.play()
     global skins
     write_coins()
     write_lives()
@@ -420,6 +426,7 @@ class ShopButton(MenuButton):
 
 
 def new_game():
+    click_sound.play()
     write_score(car.distance // fps * 5)
     car.distance = 0
     game()
@@ -512,6 +519,7 @@ class BuyBlock:
 
 
 def shop():
+    click_sound.play()
     bg = pygame.transform.scale(load_image('menu_bg.png'), (width, height))
     screen.blit(bg, (0, 0))
 
@@ -589,6 +597,7 @@ def shop():
 
 
 def scores():
+    click_sound.play()
     bg = pygame.transform.scale(load_image('menu_bg.png'), (width, height))
     screen.blit(bg, (0, 0))
 
@@ -646,6 +655,7 @@ def scores():
 
 
 def main_menu():
+    click_sound.play()
     bg = pygame.transform.scale(load_image('menu_bg.png'), (width, height))
     screen.blit(bg, (0, 0))
     buttons_group = pygame.sprite.Group()
@@ -726,12 +736,14 @@ def revive():
 
 
 def to_menu():
+    click_sound.play()
     write_score(car.distance // fps * 5)
     car.distance = 0
     main_menu()
 
 
 def death_screen():
+    crash_sound.play()
     bg = pygame.transform.scale(load_image('menu_bg.png'), (width, height))
     screen.blit(bg, (0, 0))
     buttons_group = pygame.sprite.Group()
@@ -884,6 +896,7 @@ traffics = [Traffic(), Traffic(), Traffic()]
 [road_group.add(road) for road in roads]
 [coins_group.add(coin) for coin in coins]
 [traffics_group.add(traffic) for traffic in traffics]
+[traffic.spawn() for traffic in traffics]
 
 car_group.add(car)
 

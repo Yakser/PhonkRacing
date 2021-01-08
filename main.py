@@ -5,7 +5,8 @@ import random
 import csv
 
 pygame.mixer.init()
-coin_sound = pygame.mixer.Sound('sounds/coin1.mp3')
+coin_sound1 = pygame.mixer.Sound('sounds/coin1.mp3')
+coin_sound2 = pygame.mixer.Sound('sounds/coin2.mp3')
 click_sound = pygame.mixer.Sound('sounds/click.mp3')
 crash_sound = pygame.mixer.Sound('sounds/crash.mp3')
 pygame.init()
@@ -26,7 +27,6 @@ with open("selected_skin.txt", "r") as f:
     selected_skin = f.read().strip()
     if not selected_skin:
         selected_skin = 'car_blue.png'
-
 
 
 def load_image(name, colorkey=None):
@@ -222,7 +222,7 @@ class Car(pygame.sprite.Sprite):
             collided_coins_sprites = [coins[i] for i in range(len(coins)) if collided_coins[i]]
             for collided_coin in collided_coins_sprites:
                 if collided_coin and collided_coin.visible:
-                    coin_sound.play()
+                    random.choice([coin_sound1, coin_sound2]).play()
                     self.coins_cnt += 1
                     collided_coin.hide()
 

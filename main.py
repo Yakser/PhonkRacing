@@ -4,6 +4,11 @@ import sys
 import random
 import csv
 
+pygame.mixer.init()
+coin_sound1 = pygame.mixer.Sound('sounds/coin1.mp3')
+coin_sound2 = pygame.mixer.Sound('sounds/coin2.mp3')
+click_sound = pygame.mixer.Sound('sounds/click.mp3')
+crash_sound = pygame.mixer.Sound('sounds/crash.mp3')
 pygame.init()
 pygame.display.set_caption('PhonkRacing')
 pygame.display.set_icon(pygame.image.load(os.path.join('sprites', "ico.png")))
@@ -22,7 +27,6 @@ with open("selected_skin.txt", "r") as f:
     selected_skin = f.read().strip()
     if not selected_skin:
         selected_skin = 'car_blue.png'
-
 
 
 def load_image(name, colorkey=None):
@@ -171,7 +175,7 @@ class Traffic(pygame.sprite.Sprite):
         collided = pygame.sprite.spritecollideany(self, traffics_group)
         while collided != self:
             self.rect.x = random.choice([40, 235, 440, 640])
-            self.rect.y = random.randint(-height * 3, - height)
+            self.rect.y = random.randint(-height * 2, - height)
             collided = pygame.sprite.spritecollideany(self, traffics_group)
 
     def update(self):
@@ -218,6 +222,7 @@ class Car(pygame.sprite.Sprite):
             collided_coins_sprites = [coins[i] for i in range(len(coins)) if collided_coins[i]]
             for collided_coin in collided_coins_sprites:
                 if collided_coin and collided_coin.visible:
+                    random.choice([coin_sound1, coin_sound2]).play()
                     self.coins_cnt += 1
                     collided_coin.hide()
 
@@ -420,6 +425,7 @@ class ShopButton(MenuButton):
 
 
 def new_game():
+
     write_score(car.distance // fps * 5)
     car.distance = 0
     game()
@@ -512,17 +518,19 @@ class BuyBlock:
 
 
 def shop():
+
     bg = pygame.transform.scale(load_image('menu_bg.png'), (width, height))
     screen.blit(bg, (0, 0))
-
     grid = Grid()
     heart_block = BuyBlock("buy_heart.png", "buy_heart_btn.png", "buy_heart")
     car_pink_block = BuyBlock("buy_car_pink_block.png", "buy_car_pink_block.png", "buy_skin")
     car_blue_block = BuyBlock("buy_car_blue_block.png", "buy_car_blue_block.png", "buy_skin")
+    car_red_block = BuyBlock("buy_car_red_block.png", "buy_car_red_block.png", "buy_skin")
 
-    grid.add(car_blue_block)
     grid.add(heart_block)
+    grid.add(car_blue_block)
     grid.add(car_pink_block)
+    grid.add(car_red_block)
 
     buttons_group = pygame.sprite.Group()
     close_btn = MenuButton("close_btn.png", "menu", 0)
@@ -563,6 +571,7 @@ def shop():
             if sprite.rect.collidepoint((mx, my)):
                 sprite.image = sprite.ico_hovered
                 if clicked:
+                    click_sound.play()
                     functions[sprite.functype]()
                     return
             else:
@@ -575,6 +584,7 @@ def shop():
                     skin = sprite.skin
                     args = (skin_cost, skin, grid)
                 if clicked:
+                    click_sound.play()
                     functions[sprite.functype](*args)
                     return
             else:
@@ -589,6 +599,7 @@ def shop():
 
 
 def scores():
+
     bg = pygame.transform.scale(load_image('menu_bg.png'), (width, height))
     screen.blit(bg, (0, 0))
 
@@ -635,6 +646,7 @@ def scores():
             if sprite.rect.collidepoint((mx, my)):
                 sprite.image = sprite.ico_hovered
                 if clicked:
+                    click_sound.play()
                     functions[sprite.functype]()
                     return
             else:
@@ -646,6 +658,7 @@ def scores():
 
 
 def main_menu():
+
     bg = pygame.transform.scale(load_image('menu_bg.png'), (width, height))
     screen.blit(bg, (0, 0))
     buttons_group = pygame.sprite.Group()
@@ -687,6 +700,7 @@ def main_menu():
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
+
                     clicked = True
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
@@ -696,6 +710,7 @@ def main_menu():
             if sprite.rect.collidepoint((mx, my)):
                 sprite.image = sprite.ico_hovered
                 if clicked:
+                    click_sound.play()
                     return functions[sprite.functype]()
             else:
                 sprite.image = sprite.ico
@@ -732,6 +747,7 @@ def to_menu():
 
 
 def death_screen():
+    crash_sound.play()
     bg = pygame.transform.scale(load_image('menu_bg.png'), (width, height))
     screen.blit(bg, (0, 0))
     buttons_group = pygame.sprite.Group()
@@ -788,6 +804,7 @@ def death_screen():
             if sprite.rect.collidepoint((mx, my)):
                 sprite.image = sprite.ico_hovered
                 if clicked:
+                    click_sound.play()
                     functions[sprite.functype]()
                     return
             else:
@@ -884,6 +901,7 @@ traffics = [Traffic(), Traffic(), Traffic()]
 [road_group.add(road) for road in roads]
 [coins_group.add(coin) for coin in coins]
 [traffics_group.add(traffic) for traffic in traffics]
+[traffic.spawn() for traffic in traffics]
 
 car_group.add(car)
 

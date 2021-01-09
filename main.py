@@ -357,7 +357,6 @@ class LivesCounter:
 
 
 def terminate():
-    click_sound.play()
     global skins
     write_coins()
     write_lives()
@@ -426,7 +425,7 @@ class ShopButton(MenuButton):
 
 
 def new_game():
-    click_sound.play()
+
     write_score(car.distance // fps * 5)
     car.distance = 0
     game()
@@ -519,10 +518,9 @@ class BuyBlock:
 
 
 def shop():
-    click_sound.play()
+
     bg = pygame.transform.scale(load_image('menu_bg.png'), (width, height))
     screen.blit(bg, (0, 0))
-
     grid = Grid()
     heart_block = BuyBlock("buy_heart.png", "buy_heart_btn.png", "buy_heart")
     car_pink_block = BuyBlock("buy_car_pink_block.png", "buy_car_pink_block.png", "buy_skin")
@@ -573,6 +571,7 @@ def shop():
             if sprite.rect.collidepoint((mx, my)):
                 sprite.image = sprite.ico_hovered
                 if clicked:
+                    click_sound.play()
                     functions[sprite.functype]()
                     return
             else:
@@ -585,6 +584,7 @@ def shop():
                     skin = sprite.skin
                     args = (skin_cost, skin, grid)
                 if clicked:
+                    click_sound.play()
                     functions[sprite.functype](*args)
                     return
             else:
@@ -599,7 +599,7 @@ def shop():
 
 
 def scores():
-    click_sound.play()
+
     bg = pygame.transform.scale(load_image('menu_bg.png'), (width, height))
     screen.blit(bg, (0, 0))
 
@@ -646,6 +646,7 @@ def scores():
             if sprite.rect.collidepoint((mx, my)):
                 sprite.image = sprite.ico_hovered
                 if clicked:
+                    click_sound.play()
                     functions[sprite.functype]()
                     return
             else:
@@ -657,7 +658,7 @@ def scores():
 
 
 def main_menu():
-    click_sound.play()
+
     bg = pygame.transform.scale(load_image('menu_bg.png'), (width, height))
     screen.blit(bg, (0, 0))
     buttons_group = pygame.sprite.Group()
@@ -699,6 +700,7 @@ def main_menu():
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
+
                     clicked = True
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
@@ -708,6 +710,7 @@ def main_menu():
             if sprite.rect.collidepoint((mx, my)):
                 sprite.image = sprite.ico_hovered
                 if clicked:
+                    click_sound.play()
                     return functions[sprite.functype]()
             else:
                 sprite.image = sprite.ico
@@ -738,7 +741,6 @@ def revive():
 
 
 def to_menu():
-    click_sound.play()
     write_score(car.distance // fps * 5)
     car.distance = 0
     main_menu()
@@ -802,6 +804,7 @@ def death_screen():
             if sprite.rect.collidepoint((mx, my)):
                 sprite.image = sprite.ico_hovered
                 if clicked:
+                    click_sound.play()
                     functions[sprite.functype]()
                     return
             else:

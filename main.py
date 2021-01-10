@@ -139,15 +139,10 @@ class Road(pygame.sprite.Sprite):
         self.rect.x = height // 2 - self.width // 2
         self.rect.y = pos_y
         self.pos_y = pos_y
-
-        # self.max_road_speed = 10
         self.road_speed = 600
         self.i = 0
 
     def update(self):
-        # self.road_speed += 1
-        # self.road_speed = min(self.road_speed, self.max_road_speed)
-
         self.rect.y += int(self.road_speed / fps)
 
         if self.rect.y >= height:
@@ -172,11 +167,12 @@ class Traffic(pygame.sprite.Sprite):
     def spawn(self):
         self.rect.x = random.choice([40, 235, 440, 640])
         self.rect.y = random.randint(-height * 3, - height)
-        collided = pygame.sprite.spritecollideany(self, traffics_group)
-        while collided != self:
+
+        collided = len([1 for traffic in traffics if pygame.sprite.collide_mask(self, traffic)])
+        while collided > 1:
             self.rect.x = random.choice([40, 235, 440, 640])
-            self.rect.y = random.randint(-height * 2, - height)
-            collided = pygame.sprite.spritecollideany(self, traffics_group)
+            self.rect.y = random.randint(-height * 3, - height)
+            collided = len([1 for traffic in traffics if pygame.sprite.collide_mask(self, traffic)])
 
     def update(self):
         self.rect.y += self.speed
@@ -425,7 +421,6 @@ class ShopButton(MenuButton):
 
 
 def new_game():
-
     write_score(car.distance // fps * 5)
     car.distance = 0
     game()
@@ -453,7 +448,6 @@ def buy_skin(cost, skin, grid):
             write_coins()
             car.coins_cnt = coins_count
             car.set_skin(skin)
-            #  TODO добавление скинов в список
             skins += [skin]
             need_to_set_skin = True
     else:
@@ -518,7 +512,6 @@ class BuyBlock:
 
 
 def shop():
-
     bg = pygame.transform.scale(load_image('menu_bg.png'), (width, height))
     screen.blit(bg, (0, 0))
     grid = Grid()
@@ -599,7 +592,6 @@ def shop():
 
 
 def scores():
-
     bg = pygame.transform.scale(load_image('menu_bg.png'), (width, height))
     screen.blit(bg, (0, 0))
 
@@ -658,7 +650,6 @@ def scores():
 
 
 def main_menu():
-
     bg = pygame.transform.scale(load_image('menu_bg.png'), (width, height))
     screen.blit(bg, (0, 0))
     buttons_group = pygame.sprite.Group()
@@ -700,7 +691,6 @@ def main_menu():
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
-
                     clicked = True
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
@@ -838,7 +828,7 @@ def game():
                 if event.key == pygame.K_ESCAPE:
                     write_coins()
                     write_lives()
-
+                    click_sound.play()
                     return main_menu()
             elif event.type == pygame.KEYUP:
                 if event.key in (pygame.K_LEFT, pygame.K_RIGHT):

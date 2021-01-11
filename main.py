@@ -158,11 +158,11 @@ class Road(pygame.sprite.Sprite):
         self.rect.x = height // 2 - self.width // 2
         self.rect.y = pos_y
         self.pos_y = pos_y
-        self.road_speed = 600
+        self.road_speed = 600 / fps
         self.i = 0
 
-    def update(self):  # как только тайл выходит за границы экрана снизу, он перемещается наверх
-        self.rect.y += int(self.road_speed / fps)
+    def update(self, speed_accel: int):  # как только тайл выходит за границы экрана снизу, он перемещается наверх
+        self.rect.y += int((self.road_speed + speed_accel))
         if self.rect.y >= height:
             self.rect.y = -width
 
@@ -194,8 +194,8 @@ class Traffic(pygame.sprite.Sprite):
             self.rect.y = random.randint(-height * 3, - height)
             collided = len([1 for traffic in traffics if pygame.sprite.collide_mask(self, traffic)])
 
-    def update(self):  # респавн при выходе за границы экрана
-        self.rect.y += self.speed
+    def update(self, speed_accel: int):  # респавн при выходе за границы экрана
+        self.rect.y += int(self.speed + speed_accel)
         if self.rect.y >= height:
             self.spawn()
 
@@ -287,8 +287,8 @@ class Coin(pygame.sprite.Sprite):
         self.transparent_sprite = pygame.Surface((self.width, self.height)).convert_alpha()
         self.transparent_sprite.fill((0, 0, 0, 0))
 
-    def update(self):  # перемещение монеты по экрану
-        self.rect.y += self.coin_speed
+    def update(self, speed_accel: int):  # перемещение монеты по экрану
+        self.rect.y += int(self.coin_speed + speed_accel)
         if self.rect.y >= height:  # респавн при выходе за границы экрана
             self.rect.x = random.randint(5, width - Coin.coin_width - 5)
             self.rect.y = random.randint(-height, -self.height)
@@ -301,7 +301,7 @@ class Coin(pygame.sprite.Sprite):
 
     def hide(self):  # монетка пропадает при столкновении
         self.visible = False
-        self.image = self. transparent_sprite
+        self.image = self.transparent_sprite
 
     def show(self):  # появление монеты
         self.visible = True
@@ -543,6 +543,7 @@ class BuyBlock:
         self.button = ShopButton(item_filename, functype, default_y_coord, skin=skin)
         self.button.resize(self.buy_block_size, self.buy_block_size)
 
+
 # --- МАГАЗИН ---
 def shop():
     bg = pygame.transform.scale(load_image('menu_bg.png'), (width, height))
@@ -765,11 +766,13 @@ def revive():
         write_score(car.distance // fps * 5)
         car.distance = 0
 
+
 # --- ВЫХОД В МЕНЮ ---
 def to_menu():
     write_score(car.distance // fps * 5)
     car.distance = 0
     main_menu()
+
 
 # --- ЭКРАН СМЕРТИ ---
 def death_screen():
@@ -850,7 +853,7 @@ def game():
     angle = 0
     max_speed = 7
     max_angle = 5
-    accel_x = x_change = 0
+    accel_x = x_change = speed_accel = 0
 
     while game_running:
         for event in pygame.event.get():
@@ -869,7 +872,7 @@ def game():
             elif event.type == pygame.KEYUP:
                 if event.key in (pygame.K_LEFT, pygame.K_RIGHT):
                     accel_x = 0
-
+        speed_accel += 1 / fps
         x_change += accel_x
         if abs(x_change) >= max_speed:
             x_change = x_change / abs(x_change) * max_speed
@@ -889,9 +892,9 @@ def game():
         if abs(angle) >= max_angle:
             angle = angle / abs(angle) * max_angle
 
-        [road.update() for road in roads]
-        [coin.update() for coin in coins]
-        [traffic.update() for traffic in traffics]
+        [road.update(int(speed_accel) // 10) for road in roads]
+        [coin.update(int(speed_accel) // 10) for coin in coins]
+        [traffic.update(int(speed_accel) // 10) for traffic in traffics]
         road_group.draw(screen)
         coins_group.draw(screen)
         traffics_group.draw(screen)

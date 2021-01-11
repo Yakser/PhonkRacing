@@ -224,9 +224,9 @@ class Car(pygame.sprite.Sprite):
         self.coins_cnt = get_coins()
         self.lives_cnt = get_lives()
 
-    def update(self, x: int, angle: int):  # движение машины игрока
+    def update(self, x: int, angle: int, speed_accel: int):  # движение машины игрока
         self.rect.x = x
-        self.distance += 1
+        self.distance += 1 + speed_accel // 20
         self.distance_counter.update(self.distance)
         if self.rect.x + self.width >= width:
             self.rect.x = width - self.width
@@ -892,13 +892,13 @@ def game():
         if abs(angle) >= max_angle:
             angle = angle / abs(angle) * max_angle
 
-        [road.update(int(speed_accel) // 10) for road in roads]
-        [coin.update(int(speed_accel) // 10) for coin in coins]
-        [traffic.update(int(speed_accel) // 10) for traffic in traffics]
+        [road.update(int(speed_accel) // 20) for road in roads]
+        [coin.update(int(speed_accel) // 20) for coin in coins]
+        [traffic.update(int(speed_accel) // 20) for traffic in traffics]
         road_group.draw(screen)
         coins_group.draw(screen)
         traffics_group.draw(screen)
-        car.update(x, angle)
+        car.update(x, angle, int(speed_accel))
         car_group.draw(screen)
 
         if not car.is_alive:

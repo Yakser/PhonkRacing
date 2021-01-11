@@ -4,31 +4,41 @@ import sys
 import random
 import csv
 
+# ------------------- CONSTANTS -------------------
+size = width, height = 800, 800
+fps = 60
+heart_cost = 200
+skin_cost = 1000
+
+# ------------------- ИНИЦИАЛИЗАЦИЯ -------------------
+pygame.init()
+pygame.display.set_caption('PhonkRacing')
+pygame.display.set_icon(pygame.image.load(os.path.join('sprites', "ico.png")))
+
+screen = pygame.display.set_mode(size)
+clock = pygame.time.Clock()
+
+# ------------------- ЗВУКИ -------------------
 pygame.mixer.init()
 coin_sound1 = pygame.mixer.Sound('sounds/coin1.mp3')
 coin_sound2 = pygame.mixer.Sound('sounds/coin2.mp3')
 click_sound = pygame.mixer.Sound('sounds/click.mp3')
 crash_sound = pygame.mixer.Sound('sounds/crash.mp3')
-pygame.init()
-pygame.display.set_caption('PhonkRacing')
-pygame.display.set_icon(pygame.image.load(os.path.join('sprites', "ico.png")))
-size = width, height = 800, 800
-screen = pygame.display.set_mode(size)
-fps = 60
-heart_cost = 200
-skin_cost = 1000
-clock = pygame.time.Clock()
-PIXEL_FONT = pygame.font.Font("fonts/pixel.otf", 60)
+
+# --- СЧИТВАНИЕ СПИСКА СКИНОВ ---
 with open("skins.txt", "r") as f:
     skins = list(f.read().split())
     if not skins:
         skins += ['car_blue.png']
+
+# --- ВЫБРАННЫЙ СКИН ---
 with open("selected_skin.txt", "r") as f:
     selected_skin = f.read().strip()
     if not selected_skin:
         selected_skin = 'car_blue.png'
 
 
+# --- ЗАГРУЗКА СПРАЙТОВ ---
 def load_image(name, colorkey=None):
     try:
         fullname = os.path.join('sprites', name)
@@ -50,6 +60,7 @@ def load_image(name, colorkey=None):
         sys.exit()
 
 
+# --- ПОЛУЧЕНИЕ СПИСКА РЕКОРДОВ ---
 def get_scores():
     try:
         with open('scores.csv', 'r', encoding="utf8") as csvfile:
@@ -59,6 +70,7 @@ def get_scores():
         return [0, 0, 0]
 
 
+# --- ДОБАВЛЕНИЕ НОВОГО РЕКОРДА ---
 def write_score(score: int):
     try:
         scores = get_scores()
@@ -71,6 +83,7 @@ def write_score(score: int):
         write_score(0)
 
 
+# --- СОХРАНЕНИЕ ТЕКУЩЕГО КОЛИЧЕСТВА МОНЕТ ---
 def write_coins():
     try:
         with open("coins_count.txt", "w") as coins_count:
@@ -80,6 +93,7 @@ def write_coins():
             coins_count.write("0")
 
 
+# ---  ПОЛУЧЕНИЕ ТЕКУЩЕГО КОЛИЧЕСТВА МОНЕТ ---
 def get_coins():
     try:
         with open("coins_count.txt", "r") as coins_count:
@@ -88,6 +102,7 @@ def get_coins():
         return 0
 
 
+# ---  ПОЛУЧЕНИЕ ТЕКУЩЕГО КОЛИЧЕСТВА ЖИЗНЕЙ ---
 def get_lives():
     try:
         with open("lives_count.txt", "r") as lives_count:
@@ -96,6 +111,7 @@ def get_lives():
         return 0
 
 
+# --- СОХРАНЕНИЕ ТЕКУЩЕГО КОЛИЧЕСТВА ЖИЗНЕЙ ---
 def write_lives():
     try:
         with open("lives_count.txt", "w") as lives_count:
@@ -104,6 +120,7 @@ def write_lives():
         lives_count.write("0")
 
 
+# --- ОТОБРАЖЕНИЕ ТЕКСТА ---
 def blit_text(text: str, color: str, size: int, ycoord: int, xcoord: int = None):
     font = pygame.font.Font("fonts/distance_counter_font.ttf", size)
     string_rendered = font.render(text, 1, pygame.Color(color))
@@ -115,6 +132,7 @@ def blit_text(text: str, color: str, size: int, ycoord: int, xcoord: int = None)
     screen.blit(string_rendered, rect)
 
 
+# --- СПРАЙТ ИЗОБРАЖЕНИЯ ---
 class Image(pygame.sprite.Sprite):
     def __init__(self, pos: tuple, filename: str, size: tuple, *group):
         super().__init__(*group)
@@ -125,6 +143,7 @@ class Image(pygame.sprite.Sprite):
         self.rect.x, self.rect.y = pos
 
 
+# --- СПРАЙТ ТАЙЛА ДОРОГИ ---
 class Road(pygame.sprite.Sprite):
     image = load_image("road.jpg")
     image = pygame.transform.scale(image, (width, width))
@@ -142,13 +161,13 @@ class Road(pygame.sprite.Sprite):
         self.road_speed = 600
         self.i = 0
 
-    def update(self):
+    def update(self):  # как только тайл выходит за границы экрана снизу, он перемещается наверх
         self.rect.y += int(self.road_speed / fps)
-
         if self.rect.y >= height:
             self.rect.y = -width
 
 
+# --- СПРАЙТ ВСТРЕЧНЫХ МАШИН ---
 class Traffic(pygame.sprite.Sprite):
     images = [pygame.transform.scale(load_image(f"traffic{i}.png"), (9 * 15, 16 * 15))
               for i in range(1, 6)]
@@ -164,22 +183,24 @@ class Traffic(pygame.sprite.Sprite):
         self.rect.x = random.choice([40, 235, 440, 640])
         self.rect.y = random.randint(-height * 3, -2 * height)
 
-    def spawn(self):
+    def spawn(self):  # рандомный спавн машины на одной из 4-ёх полос движения
         self.rect.x = random.choice([40, 235, 440, 640])
         self.rect.y = random.randint(-height * 3, - height)
 
+        # проверка на столкновения с другими машинами
         collided = len([1 for traffic in traffics if pygame.sprite.collide_mask(self, traffic)])
         while collided > 1:
             self.rect.x = random.choice([40, 235, 440, 640])
             self.rect.y = random.randint(-height * 3, - height)
             collided = len([1 for traffic in traffics if pygame.sprite.collide_mask(self, traffic)])
 
-    def update(self):
+    def update(self):  # респавн при выходе за границы экрана
         self.rect.y += self.speed
         if self.rect.y >= height:
             self.spawn()
 
 
+# --- СПРАЙТ МАШИНЫ ИГРОКА ---
 class Car(pygame.sprite.Sprite):
     image = load_image(selected_skin)
     image = pygame.transform.scale(image, (9 * 15, 16 * 15))  # 16x9
@@ -203,7 +224,7 @@ class Car(pygame.sprite.Sprite):
         self.coins_cnt = get_coins()
         self.lives_cnt = get_lives()
 
-    def update(self, x: int, angle: int):
+    def update(self, x: int, angle: int):  # движение машины игрока
         self.rect.x = x
         self.distance += 1
         self.distance_counter.update(self.distance)
@@ -213,6 +234,7 @@ class Car(pygame.sprite.Sprite):
             self.rect.x = 0
         self.image = pygame.transform.rotate(Car.image, angle)
 
+        # подсчет собранных монет
         collided_coins = [pygame.sprite.collide_mask(self, coin) for coin in coins]
         if any(collided_coins):
             collided_coins_sprites = [coins[i] for i in range(len(coins)) if collided_coins[i]]
@@ -223,24 +245,27 @@ class Car(pygame.sprite.Sprite):
                     collided_coin.hide()
 
         collided_traffics = [pygame.sprite.collide_mask(self, traffic) for traffic in traffics]
+
+        # "смерть" при столкновении со встречной машиной
         if any(collided_traffics):
             self.is_alive = False
 
-        coins_counter.update(self.coins_cnt)
+        coins_counter.update(self.coins_cnt)  # обновление количества монет
 
     def reset(self):
         self.__init__()
 
-    def get_distance(self):
+    def get_distance(self):  # пройденная дистанция
         return self.distance
 
-    def set_skin(self, skin_name):
+    def set_skin(self, skin_name):  # установка скина
         image = load_image(skin_name)
-        image = pygame.transform.scale(image, (9 * 15, 16 * 15))  # 16x9
+        image = pygame.transform.scale(image, (9 * 15, 16 * 15))  # 9x16
         Car.image = image
         self.image = image
 
 
+# --- СПРАЙТ МОНЕТЫ ---
 class Coin(pygame.sprite.Sprite):
     image = load_image("coin.png")
 
@@ -257,14 +282,14 @@ class Coin(pygame.sprite.Sprite):
         self.rect.x = random.randint(10, width - Coin.coin_width)
         self.rect.y = random.randint(-3 * height, -height)
         self.mask = pygame.mask.from_surface(self.image)
-
         self.mask = pygame.mask.from_surface(self.image)
         self.visible = True
+        self.transparent_sprite = pygame.Surface((self.width, self.height)).convert_alpha()
+        self.transparent_sprite.fill((0, 0, 0, 0))
 
-    def update(self):
+    def update(self):  # перемещение монеты по экрану
         self.rect.y += self.coin_speed
-        if self.rect.y >= height:
-
+        if self.rect.y >= height:  # респавн при выходе за границы экрана
             self.rect.x = random.randint(5, width - Coin.coin_width - 5)
             self.rect.y = random.randint(-height, -self.height)
             collided = pygame.sprite.spritecollideany(self, coins_group)
@@ -272,28 +297,25 @@ class Coin(pygame.sprite.Sprite):
                 self.rect.x = random.randint(5, width - Coin.coin_width - 5)
                 self.rect.y = random.randint(-height, -self.height)
                 collided = pygame.sprite.spritecollideany(self, coins_group)
-
             self.show()
 
-    def hide(self):
+    def hide(self):  # монетка пропадает при столкновении
         self.visible = False
-        transparent_sprite = pygame.Surface((self.width, self.height))
-        transparent_sprite = transparent_sprite.convert_alpha()
-        transparent_sprite.fill((0, 0, 0, 0))
-        self.image = transparent_sprite
+        self.image = self. transparent_sprite
 
-    def show(self):
+    def show(self):  # появление монеты
         self.visible = True
         self.image = Coin.image
 
 
+# --- СЧЕТЧИК ПРОЙДЕННОГО РАССТОЯНИЯ ---
 class DistanceCounter:
     def __init__(self, dist: int):
         self.dist = str(dist)
         self.font = pygame.font.Font("fonts/distance_counter_font.ttf", 60)
         self.update(dist)
 
-    def update(self, dist: int):
+    def update(self, dist: int):  # обновление счетчика
         self.dist = str(dist // fps * 5)
         string_rendered = self.font.render(f"{self.dist} m", 1, pygame.Color('white'))
         rect = string_rendered.get_rect()
@@ -302,6 +324,7 @@ class DistanceCounter:
         screen.blit(string_rendered, rect)
 
 
+# --- СЧЕТЧИК КОЛИЧЕСТВА МОНЕТ ---
 class CoinsCounter:
     def __init__(self, coins_cnt: int):
         self.coins_cnt = str(coins_cnt)
@@ -315,11 +338,12 @@ class CoinsCounter:
         screen.blit(coin_ico, (rect.left - 45, rect.y + 20, 40, 40))
         screen.blit(string_rendered, rect)
 
-    def update(self, coins_cnt: int):
+    def update(self, coins_cnt: int):  # обновление счетчика
         self.coins_cnt = coins_cnt
         self.__init__(coins_cnt)
 
 
+# --- СЧЕТЧИК КОЛИЧЕСТВА ЖИЗНЕЙ ---
 class LivesCounter:
     def __init__(self, lives_cnt: int):
         self.lives_cnt = str(lives_cnt)
@@ -333,7 +357,7 @@ class LivesCounter:
         screen.blit(self.heart_ico, (self.rect.left - 35, 0, 30, 30))
         screen.blit(self.string_rendered, (self.rect.left - 35, 0, 30, 30))
 
-    def update(self, lives_cnt: int):
+    def update(self, lives_cnt: int):  # обновление счетчика
         self.lives_cnt = lives_cnt
         text_coord = 0
         self.string_rendered = self.font.render(str(self.lives_cnt), 1, pygame.Color('#f18c8e'))
@@ -343,15 +367,16 @@ class LivesCounter:
         self.rect.x = width - self.rect.right - 20
         text_coord += self.rect.height
 
-    def draw(self):
+    def draw(self):  # перерисовка счетчика
         screen.blit(self.heart_ico, (self.rect.left - 35, 85, 30, 30))
         screen.blit(self.string_rendered, (self.rect.left, 60, 30, 30))
 
-    def add_life(self):
+    def add_life(self):  # добавление жизни
         self.lives_cnt = int(self.lives_cnt) + 1
         self.update(self.lives_cnt)
 
 
+# --- ВЫХОД ИЗ ИГРЫ ---
 def terminate():
     global skins
     write_coins()
@@ -363,6 +388,7 @@ def terminate():
     sys.exit()
 
 
+# --- ЗАСТАВКА ---
 def show_intro():
     bg = pygame.transform.scale(load_image('bg.png'), (width, height))
     screen.blit(bg, (0, 0))
@@ -377,6 +403,7 @@ def show_intro():
         pygame.display.flip()
 
 
+# --- КНОПКА МЕНЮ ---
 class MenuButton(pygame.sprite.Sprite):
     def __init__(self, ico_name: str, functype: str, y_coord: int, x_coord=None):
         super(MenuButton, self).__init__()
@@ -396,7 +423,7 @@ class MenuButton(pygame.sprite.Sprite):
         self.rect.y = y_coord
         self.y_coord = y_coord
 
-    def resize(self, w: int, h: int):
+    def resize(self, w: int, h: int):  # изменение размера кнопки
         self.btn_w = w
         self.btn_h = h
         self.ico = pygame.transform.scale(load_image(self.ico_name), (self.btn_w, self.btn_h))
@@ -409,23 +436,26 @@ class MenuButton(pygame.sprite.Sprite):
         self.rect.x = width // 2 - self.btn_w // 2
         self.rect.y = self.y_coord
 
-    def move(self, x: int, y: int):
+    def move(self, x: int, y: int):  # перемещение кнопки
         self.rect.x = x
         self.rect.y = y
 
 
+# --- КНОПКА МАГАЗИНА ---
 class ShopButton(MenuButton):
     def __init__(self, ico_name: str, functype: str, y_coord: int, x_coord=None, skin=None):
         super(ShopButton, self).__init__(ico_name, functype, y_coord, x_coord)
         self.skin = skin
 
 
+# --- НОВАЯ ИГРА ---
 def new_game():
     write_score(car.distance // fps * 5)
-    car.distance = 0
+    car.reset()
     game()
 
 
+# --- ПОКУПКА ЖИЗНИ ---
 def buy_heart():
     coins_count = int(coins_counter.coins_cnt)
     if coins_count >= heart_cost:
@@ -437,6 +467,7 @@ def buy_heart():
     shop()
 
 
+# --- ПОКУПКА СКИНА ---
 def buy_skin(cost, skin, grid):
     global skins, selected_skin
     need_to_set_skin = False
@@ -462,6 +493,7 @@ def buy_skin(cost, skin, grid):
     shop()
 
 
+# --- LAYOUT ТОВАРОВ В МАГАЗИНЕ ---
 class Grid:
     def __init__(self):
         self.table = []
@@ -489,6 +521,7 @@ class Grid:
         self.buttons_group.draw(screen)
 
 
+# --- БЛОК ТОВАРА В МАГАЗИНЕ ---
 class BuyBlock:
     def __init__(self, block_filename, item_filename, functype):
         self.buy_block_size = 250
@@ -510,7 +543,7 @@ class BuyBlock:
         self.button = ShopButton(item_filename, functype, default_y_coord, skin=skin)
         self.button.resize(self.buy_block_size, self.buy_block_size)
 
-
+# --- МАГАЗИН ---
 def shop():
     bg = pygame.transform.scale(load_image('menu_bg.png'), (width, height))
     screen.blit(bg, (0, 0))
@@ -591,6 +624,7 @@ def shop():
         pygame.display.flip()
 
 
+# --- РЕКОРДЫ ---
 def scores():
     bg = pygame.transform.scale(load_image('menu_bg.png'), (width, height))
     screen.blit(bg, (0, 0))
@@ -649,6 +683,7 @@ def scores():
         pygame.display.flip()
 
 
+# --- ОСНОВНОЕ МЕНЮ ---
 def main_menu():
     bg = pygame.transform.scale(load_image('menu_bg.png'), (width, height))
     screen.blit(bg, (0, 0))
@@ -711,6 +746,7 @@ def main_menu():
         clock.tick(fps)
 
 
+# --- ВОЗРОЖДЕНИЕ ---
 def revive():
     lives_count = int(lives_counter.lives_cnt)
     coins_cnt = int(coins_counter.coins_cnt)
@@ -729,13 +765,13 @@ def revive():
         write_score(car.distance // fps * 5)
         car.distance = 0
 
-
+# --- ВЫХОД В МЕНЮ ---
 def to_menu():
     write_score(car.distance // fps * 5)
     car.distance = 0
     main_menu()
 
-
+# --- ЭКРАН СМЕРТИ ---
 def death_screen():
     crash_sound.play()
     bg = pygame.transform.scale(load_image('menu_bg.png'), (width, height))
@@ -807,6 +843,7 @@ def death_screen():
         pygame.display.flip()
 
 
+# --- ОСНОВНАЯ ИГРА ---
 def game():
     x = car.rect.x
     game_running = True
@@ -816,7 +853,6 @@ def game():
     accel_x = x_change = 0
 
     while game_running:
-        # screen.fill((0, 0, 0))
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
@@ -878,6 +914,7 @@ def game():
     main_menu()
 
 
+# --- ГРУППЫ СПРАЙТОВ ---
 road_group = pygame.sprite.Group()
 coins_group = pygame.sprite.Group()
 traffics_group = pygame.sprite.Group()

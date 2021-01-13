@@ -551,15 +551,12 @@ def shop():
     bg = pygame.transform.scale(load_image('menu_bg.png'), (width, height))
     screen.blit(bg, (0, 0))
     grid = Grid()
-    heart_block = BuyBlock("buy_heart.png", "buy_heart_btn.png", "buy_heart")
-    car_pink_block = BuyBlock("buy_car_pink_block.png", "buy_car_pink_block.png", "buy_skin")
-    car_blue_block = BuyBlock("buy_car_blue_block.png", "buy_car_blue_block.png", "buy_skin")
-    car_red_block = BuyBlock("buy_car_red_block.png", "buy_car_red_block.png", "buy_skin")
-
-    grid.add(heart_block)
-    grid.add(car_blue_block)
-    grid.add(car_pink_block)
-    grid.add(car_red_block)
+    [grid.add(block) for block in [BuyBlock("buy_heart.png", "buy_heart_btn.png", "buy_heart"),
+                                   BuyBlock("buy_car_pink_block.png", "buy_car_pink_block.png", "buy_skin"),
+                                   BuyBlock("buy_car_blue_block.png", "buy_car_blue_block.png", "buy_skin"),
+                                   BuyBlock("buy_car_red_block.png", "buy_car_red_block.png", "buy_skin"),
+                                   BuyBlock("buy_car_orange_block.png", "buy_car_orange_block.png", "buy_skin"),
+                                   BuyBlock("buy_car_green_block.png", "buy_car_green_block.png", "buy_skin")]]
 
     buttons_group = pygame.sprite.Group()
     close_btn = MenuButton("close_btn.png", "menu", 0)
@@ -732,7 +729,11 @@ def main_menu():
                     clicked = True
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    terminate()
+                    if car.distance:
+                        click_sound.play()
+                        return game()
+                    else:
+                        terminate()
 
         for sprite in buttons_group.sprites():
             if sprite.rect.collidepoint((mx, my)):

@@ -3,6 +3,7 @@ import os
 import sys
 import random
 import csv
+from pygame.locals import *
 
 # ------------------- CONSTANTS -------------------
 size = width, height = 800, 800
@@ -14,9 +15,11 @@ skin_cost = 1000
 pygame.init()
 pygame.display.set_caption('PhonkRacing')
 pygame.display.set_icon(pygame.image.load(os.path.join('sprites', "ico.png")))
-
-screen = pygame.display.set_mode(size)
+pygame.event.set_allowed([pygame.QUIT, pygame.KEYDOWN, pygame.KEYUP, pygame.MOUSEBUTTONDOWN])
+screen = pygame.display.set_mode(size, DOUBLEBUF | SCALED)
 clock = pygame.time.Clock()
+
+speed_accel = 0
 
 # ------------------- ЗВУКИ -------------------
 pygame.mixer.init()
@@ -164,7 +167,7 @@ class Road(pygame.sprite.Sprite):
     def update(self, speed_accel: int):  # как только тайл выходит за границы экрана снизу, он перемещается наверх
         self.rect.y += int((self.road_speed + speed_accel))
         if self.rect.y >= height:
-            self.rect.y = -width
+            self.rect.y = -height
 
 
 # --- СПРАЙТ ВСТРЕЧНЫХ МАШИН ---
@@ -217,7 +220,7 @@ class Car(pygame.sprite.Sprite):
         self.distance = 0
         self.speed_x = 450 / fps
         self.distance_counter = DistanceCounter(0)  # счетчик пройденного расстояния
-
+        self.speed_accel = 0
         self.coins_cnt = get_coins()  # количество монет
         self.lives_cnt = get_lives()  # количество жизней
 
@@ -446,6 +449,8 @@ class ShopButton(MenuButton):
 
 # --- НОВАЯ ИГРА ---
 def new_game():
+    global speed_accel
+    speed_accel = 0
     write_score(car.distance // fps * 5)
     car.reset()
     game()
@@ -843,14 +848,16 @@ def death_screen():
 
 # --- ОСНОВНАЯ ИГРА ---
 def game():
+    global speed_accel
     x = car.rect.x
     game_running = True
     angle = 0
     max_speed = 7
     max_angle = 5
-    accel_x = x_change = speed_accel = 0
+    accel_x = x_change = 0
 
     while game_running:
+        screen.fill((0, 0, 0))
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
@@ -867,6 +874,7 @@ def game():
             elif event.type == pygame.KEYUP:
                 if event.key in (pygame.K_LEFT, pygame.K_RIGHT):
                     accel_x = 0
+
         speed_accel += 1 / fps
         x_change += accel_x
         if abs(x_change) >= max_speed:
@@ -893,8 +901,6 @@ def game():
         road_group.draw(screen)
         coins_group.draw(screen)
         traffics_group.draw(screen)
-        car.update(x, angle, int(speed_accel))
-        car_group.draw(screen)
 
         if not car.is_alive:
             write_coins()
@@ -906,6 +912,9 @@ def game():
             game_running = False
             death_screen()
 
+        car.update(x, angle, int(speed_accel))
+        car_group.draw(screen)
+
         clock.tick(fps)
         pygame.display.flip()
 
@@ -916,9 +925,9 @@ def game():
 road_group = pygame.sprite.Group()
 coins_group = pygame.sprite.Group()
 traffics_group = pygame.sprite.Group()
-car_group = pygame.sprite.Group()
 
 car = Car()
+car_group = pygame.sprite.GroupSingle(car)
 roads = [Road(0), Road(-height)]
 coins = [Coin(), Coin(), Coin()]
 traffics = [Traffic(), Traffic(), Traffic()]

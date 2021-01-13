@@ -34,7 +34,7 @@ with open("skins.txt", "r") as f:
 # --- ВЫБРАННЫЙ СКИН ---
 with open("selected_skin.txt", "r") as f:
     selected_skin = f.read().strip()
-    if not selected_skin:
+    if not selected_skin or selected_skin not in skins:
         selected_skin = 'car_blue.png'
 
 
@@ -321,19 +321,21 @@ class DistanceCounter:
 class CoinsCounter:
     def __init__(self, coins_cnt: int):
         self.coins_cnt = str(coins_cnt)
-        coin_ico = Coin.image
-        coin_ico = pygame.transform.scale(coin_ico, (40, 40))
+        self.coin_ico = pygame.transform.scale(Coin.image, (40, 40))
         font = pygame.font.Font("fonts/distance_counter_font.ttf", 60)
-        string_rendered = font.render(self.coins_cnt, 1, pygame.Color('#f4de7e'))
-        rect = string_rendered.get_rect()
-        rect.top = 10
-        rect.x = width - rect.right - 20
-        screen.blit(coin_ico, (rect.left - 45, rect.y + 20, 40, 40))
-        screen.blit(string_rendered, rect)
+        self.string_rendered = font.render(self.coins_cnt, 1, pygame.Color('#f4de7e'))
+        self.rect = self.string_rendered.get_rect()
+        self.rect.top = 10
+        self.rect.x = width - self.rect.right - 20
+        self.blit()
 
     def update(self, coins_cnt: int):  # обновление счетчика
         self.coins_cnt = coins_cnt
         self.__init__(coins_cnt)
+
+    def blit(self):
+        screen.blit(self.coin_ico, (self.rect.left - 45, self.rect.y + 20, 40, 40))
+        screen.blit(self.string_rendered, self.rect)
 
 
 # --- СЧЕТЧИК КОЛИЧЕСТВА ЖИЗНЕЙ ---
@@ -567,10 +569,10 @@ def shop():
         "buy_heart": buy_heart,
         "buy_skin": buy_skin
     }
-    coins_count = get_coins()
 
     blit_text("SHOP", '#f4de7e', 90, 10)
-
+    coins_counter.blit()
+    lives_counter.draw()
     running = True
     while running:
         mx, my = pygame.mouse.get_pos()
@@ -613,8 +615,6 @@ def shop():
 
         buttons_group.draw(screen)
         grid.draw()
-        coins_counter.update(coins_count)
-        lives_counter.draw()
         clock.tick(fps)
         pygame.display.flip()
 
@@ -690,7 +690,8 @@ def main_menu():
         "shop": shop,
         "scores": scores
     }
-    coins_count = get_coins()
+    coins_counter.blit()
+    lives_counter.draw()
 
     dy = 100
     play_btn = MenuButton("play_btn.png", "play", dy)
@@ -713,6 +714,7 @@ def main_menu():
 
     running = True
     while running:
+
         mx, my = pygame.mouse.get_pos()
         clicked = False
         for event in pygame.event.get():
@@ -735,8 +737,7 @@ def main_menu():
             else:
                 sprite.image = sprite.ico
         buttons_group.draw(screen)
-        coins_counter.update(coins_count)
-        lives_counter.draw()
+
         pygame.display.flip()
         clock.tick(fps)
 

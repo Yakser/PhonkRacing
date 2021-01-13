@@ -17,6 +17,7 @@ pygame.display.set_caption('PhonkRacing')
 pygame.display.set_icon(pygame.image.load(os.path.join('sprites', "ico.png")))
 pygame.event.set_allowed([pygame.QUIT, pygame.KEYDOWN, pygame.KEYUP, pygame.MOUSEBUTTONDOWN])
 screen = pygame.display.set_mode(size, DOUBLEBUF | SCALED)
+screen.set_alpha(None)
 clock = pygame.time.Clock()
 
 speed_accel = 0
@@ -857,7 +858,7 @@ def game():
     accel_x = x_change = 0
 
     while game_running:
-        screen.fill((0, 0, 0))
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()

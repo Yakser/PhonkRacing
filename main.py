@@ -10,7 +10,7 @@ size = width, height = 800, 800
 fps = 60
 heart_cost = 200
 skin_cost = 1000
-
+GRAVITY = 1
 # ------------------- ИНИЦИАЛИЗАЦИЯ -------------------
 pygame.init()
 pygame.display.set_caption('PhonkRacing')
@@ -18,6 +18,7 @@ pygame.display.set_icon(pygame.image.load(os.path.join('sprites', "ico.png")))
 pygame.event.set_allowed([pygame.QUIT, pygame.KEYDOWN, pygame.KEYUP, pygame.MOUSEBUTTONDOWN])
 screen = pygame.display.set_mode(size, DOUBLEBUF | SCALED)
 screen.set_alpha(None)
+screen_rect = screen.get_rect()
 clock = pygame.time.Clock()
 
 speed_accel = 0
@@ -239,9 +240,12 @@ class Car(pygame.sprite.Sprite):
         collided_coins = [pygame.sprite.collide_mask(self, coin) for coin in coins]
         if any(collided_coins):
             collided_coins_sprites = [coins[i] for i in range(len(coins)) if collided_coins[i]]
-            for collided_coin in collided_coins_sprites:
+            for collided_coin, coords in zip(collided_coins_sprites, collided_coins):
                 if collided_coin and collided_coin.visible:
                     random.choice([coin_sound1, coin_sound2]).play()
+
+                    create_particles((collided_coin.rect.x + collided_coin.width // 2,
+                                     collided_coin.rect.y + collided_coin.rect.height // 2))
                     self.coins_cnt += 1
                     collided_coin.hide()
 
@@ -744,7 +748,6 @@ def main_menu():
             else:
                 sprite.image = sprite.ico
         buttons_group.draw(screen)
-
         pygame.display.flip()
         clock.tick(fps)
 
@@ -916,17 +919,60 @@ def game():
 
         car.update(x, angle, int(speed_accel))
         car_group.draw(screen)
-
+        particle_group.update()
+        particle_group.draw(screen)
         clock.tick(fps)
         pygame.display.flip()
 
     main_menu()
 
 
+# --- СИСТЕМА ЧАСТИЦ ---
+class Particle(pygame.sprite.Sprite):
+    # сгенерируем частицы разного размера
+    particle = [pygame.transform.scale(load_image("coin.png"), (15, 15))]
+    for scale in (5, 10, 15):
+        particle.append(pygame.transform.scale(particle[0], (scale, scale)))
+
+    def __init__(self, pos, dx, dy):
+        super().__init__(particle_group)
+        self.image = random.choice(self.particle)
+        self.rect = self.image.get_rect()
+
+        # у каждой частицы своя скорость — это вектор
+        self.velocity = [dx, dy]
+        # и свои координаты
+        self.rect.x, self.rect.y = pos
+
+        # гравитация будет одинаковой (значение константы)
+        self.gravity = GRAVITY
+
+    def update(self):
+        # применяем гравитационный эффект:
+        # движение с ускорением под действием гравитации
+        self.velocity[1] += self.gravity
+        # перемещаем частицу
+        self.rect.x += self.velocity[0]
+        self.rect.y += self.velocity[1]
+        # убиваем, если частица ушла за экран
+        if not self.rect.colliderect(screen_rect):
+            self.kill()
+
+
+def create_particles(position):
+    # количество создаваемых частиц
+    particle_count = 20
+    # возможные скорости
+    numbers = range(-4, 4)
+    for _ in range(particle_count):
+        Particle(position, random.choice(numbers), random.choice(numbers))
+
+
 # --- ГРУППЫ СПРАЙТОВ ---
 road_group = pygame.sprite.Group()
 coins_group = pygame.sprite.Group()
 traffics_group = pygame.sprite.Group()
+particle_group = pygame.sprite.Group()
 
 car = Car()
 car_group = pygame.sprite.GroupSingle(car)

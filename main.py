@@ -231,7 +231,7 @@ class Car(pygame.sprite.Sprite):
             self.rect.x = 0
         self.image = pygame.transform.rotate(Car.image, angle)
 
-        # подсчет собранных моне
+        # подсчет собранных монет
         collided_coins = [pygame.sprite.collide_mask(self, coin) for coin in coins]
         if any(collided_coins):
             collided_coins_sprites = [coins[i] for i in range(len(coins)) if collided_coins[i]]

@@ -202,27 +202,24 @@ class Traffic(pygame.sprite.Sprite):
 
 # --- СПРАЙТ МАШИНЫ ИГРОКА ---
 class Car(pygame.sprite.Sprite):
-    image = load_image(selected_skin)
-    image = pygame.transform.scale(image, (9 * 15, 16 * 15))  # 16x9
+    image = pygame.transform.scale(load_image(selected_skin), (9 * 15, 16 * 15))  # 16x9
 
     def __init__(self, *group):
         super().__init__(*group)
+        self.is_alive = True
         self.image = Car.image
         self.width = self.image.get_width()
         self.height = self.image.get_height()
         self.rect = self.image.get_rect()
         self.rect.x = height // 2 - self.width // 2
         self.rect.y = width - self.height // 2 - 150
+        self.mask = pygame.mask.from_surface(self.image)
         self.distance = 0
         self.speed_x = 450 / fps
-        self.distance_counter = DistanceCounter(0)
-        self.coins_cnt = 0
-        self.lives_cnt = 0
-        self.is_alive = True
-        self.mask = pygame.mask.from_surface(self.image)
+        self.distance_counter = DistanceCounter(0)  # счетчик пройденного расстояния
 
-        self.coins_cnt = get_coins()
-        self.lives_cnt = get_lives()
+        self.coins_cnt = get_coins()  # количество монет
+        self.lives_cnt = get_lives()  # количество жизней
 
     def update(self, x: int, angle: int, speed_accel: int):  # движение машины игрока
         self.rect.x = x
@@ -234,7 +231,7 @@ class Car(pygame.sprite.Sprite):
             self.rect.x = 0
         self.image = pygame.transform.rotate(Car.image, angle)
 
-        # подсчет собранных монет
+        # подсчет собранных моне
         collided_coins = [pygame.sprite.collide_mask(self, coin) for coin in coins]
         if any(collided_coins):
             collided_coins_sprites = [coins[i] for i in range(len(coins)) if collided_coins[i]]
@@ -244,32 +241,28 @@ class Car(pygame.sprite.Sprite):
                     self.coins_cnt += 1
                     collided_coin.hide()
 
-        collided_traffics = [pygame.sprite.collide_mask(self, traffic) for traffic in traffics]
-
         # "смерть" при столкновении со встречной машиной
+        collided_traffics = [pygame.sprite.collide_mask(self, traffic) for traffic in traffics]
         if any(collided_traffics):
             self.is_alive = False
 
         coins_counter.update(self.coins_cnt)  # обновление количества монет
 
-    def reset(self):
+    def reset(self):  # сброс
         self.__init__()
 
     def get_distance(self):  # пройденная дистанция
         return self.distance
 
     def set_skin(self, skin_name):  # установка скина
-        image = load_image(skin_name)
-        image = pygame.transform.scale(image, (9 * 15, 16 * 15))  # 9x16
+        image = pygame.transform.scale(load_image(skin_name), (9 * 15, 16 * 15))  # 9x16
         Car.image = image
         self.image = image
 
 
 # --- СПРАЙТ МОНЕТЫ ---
 class Coin(pygame.sprite.Sprite):
-    image = load_image("coin.png")
-
-    image = pygame.transform.scale(image, (75, 75))
+    image = pygame.transform.scale(load_image("coin.png"), (75, 75))
     coin_width = image.get_width()
 
     def __init__(self, *group):
@@ -398,6 +391,7 @@ def show_intro():
             if event.type == pygame.QUIT:
                 terminate()
             if event.type == pygame.KEYUP or event.type == pygame.MOUSEBUTTONDOWN:
+                click_sound.play()
                 return
         clock.tick(fps)
         pygame.display.flip()

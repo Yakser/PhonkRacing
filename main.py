@@ -184,13 +184,11 @@ class Traffic(pygame.sprite.Sprite):
         self.height = self.image.get_height()
         self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect()
-        self.rect.x = random.choice([40, 235, 440, 640])
-        self.rect.y = random.randint(-height * 3, -2 * height)
+        self.spawn()
 
     def spawn(self):  # рандомный спавн машины на одной из 4-ёх полос движения
         self.rect.x = random.choice([40, 235, 440, 640])
-        self.rect.y = random.randint(-height * 3, - height)
-
+        self.rect.y = -random.randint(height, height * 3)
         # проверка на столкновения с другими машинами
         collided = len([1 for traffic in traffics if pygame.sprite.collide_mask(self, traffic)])
         while collided > 1:
@@ -290,14 +288,19 @@ class Coin(pygame.sprite.Sprite):
     def update(self, speed_accel: int):  # перемещение монеты по экрану
         self.rect.y += int(self.coin_speed + speed_accel)
         if self.rect.y >= height:  # респавн при выходе за границы экрана
+            self.spawn()
+            self.show()
+
+    def spawn(self):
+
+        self.rect.x = random.randint(5, width - Coin.coin_width - 5)
+        self.rect.y = random.randint(-height, -self.height)
+        # проверка на столкновения с другими монетами
+        collided = len([1 for coin in coins if pygame.sprite.collide_mask(self, coin)])
+        while collided > 1:
             self.rect.x = random.randint(5, width - Coin.coin_width - 5)
             self.rect.y = random.randint(-height, -self.height)
-            collided = pygame.sprite.spritecollideany(self, coins_group)
-            while collided != self:
-                self.rect.x = random.randint(5, width - Coin.coin_width - 5)
-                self.rect.y = random.randint(-height, -self.height)
-                collided = pygame.sprite.spritecollideany(self, coins_group)
-            self.show()
+            collided = len([1 for coin in coins if pygame.sprite.collide_mask(self, coin)])
 
     def hide(self):  # монетка пропадает при столкновении
         self.visible = False
@@ -981,8 +984,10 @@ particle_group = pygame.sprite.Group()
 car = Car()
 car_group = pygame.sprite.GroupSingle(car)
 roads = [Road(0), Road(-height)]
-coins = [Coin(), Coin(), Coin()]
-traffics = [Traffic(), Traffic(), Traffic()]
+coins = []
+coins += [Coin(), Coin(), Coin()]
+traffics = []
+traffics += [Traffic(), Traffic(), Traffic()]
 
 [road_group.add(road) for road in roads]
 [coins_group.add(coin) for coin in coins]

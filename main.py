@@ -20,7 +20,6 @@ screen = pygame.display.set_mode(size, DOUBLEBUF | SCALED)
 screen.set_alpha(None)
 screen_rect = screen.get_rect()
 clock = pygame.time.Clock()
-
 speed_accel = 0
 
 # ------------------- ЗВУКИ -------------------
@@ -150,7 +149,7 @@ class Image(pygame.sprite.Sprite):
 
 # --- СПРАЙТ ТАЙЛА ДОРОГИ ---
 class Road(pygame.sprite.Sprite):
-    image = load_image("road.jpg")
+    image = load_image("road1.jpg")
     image = pygame.transform.scale(image, (width, width))
     height = image.get_height()
 
@@ -411,8 +410,8 @@ def show_intro():
 class MenuButton(pygame.sprite.Sprite):
     def __init__(self, ico_name: str, functype: str, y_coord: int, x_coord=None):
         super(MenuButton, self).__init__()
-        self.btn_w = 125
-        self.btn_h = 75
+        self.btn_w = int(125 * 1.5)
+        self.btn_h = int(75 * 1.5)
         self.functype = functype
         self.ico = pygame.transform.scale(load_image(ico_name), (self.btn_w, self.btn_h))
         self.image = self.ico
@@ -560,7 +559,8 @@ def shop():
                                    BuyBlock("buy_car_blue_block.png", "buy_car_blue_block.png", "buy_skin"),
                                    BuyBlock("buy_car_red_block.png", "buy_car_red_block.png", "buy_skin"),
                                    BuyBlock("buy_car_orange_block.png", "buy_car_orange_block.png", "buy_skin"),
-                                   BuyBlock("buy_car_green_block.png", "buy_car_green_block.png", "buy_skin")]]
+                                   BuyBlock("buy_car_green_block.png", "buy_car_green_block.png", "buy_skin")
+                                   ]]
 
     buttons_group = pygame.sprite.Group()
     close_btn = MenuButton("close_btn.png", "menu", 0)
@@ -699,20 +699,22 @@ def main_menu():
     }
     coins_counter.blit()
     lives_counter.draw()
+    h = MenuButton("play_btn.png", "", 0).height
+    n = 4 if not car.distance else 5
+    y = (height - (n + 1) * h) // n
+    dy = y + h
 
-    dy = 100
-    play_btn = MenuButton("play_btn.png", "play", dy)
-
-    dy += 100
+    play_btn = MenuButton("play_btn.png", "play", y)
+    y += dy
     if car.distance:
-        continue_btn = MenuButton("continue_btn.png", "continue", dy)
+        continue_btn = MenuButton("continue_btn.png", "continue", y)
         buttons_group.add(continue_btn)
-        dy += 100
-    shop_btn = MenuButton("shop_btn.png", "shop", dy)
-    dy += 100
-    scores_btn = MenuButton("scores_btn.png", "scores", dy)
-    dy += 100
-    quit_btn = MenuButton("quit_btn.png", "quit", dy)
+        y += dy
+    shop_btn = MenuButton("shop_btn.png", "shop", y)
+    y += dy
+    scores_btn = MenuButton("scores_btn.png", "scores", y)
+    y += dy
+    quit_btn = MenuButton("quit_btn.png", "quit", y)
 
     buttons_group.add(play_btn)
     buttons_group.add(shop_btn)
@@ -721,7 +723,6 @@ def main_menu():
 
     running = True
     while running:
-
         mx, my = pygame.mouse.get_pos()
         clicked = False
         for event in pygame.event.get():
@@ -797,20 +798,23 @@ def death_screen():
     }
     coins_count = get_coins()
     lives_count = get_lives()
-
     lives_counter.update(lives_count)
-    dy = 300
-    play_btn = MenuButton("play_btn.png", "play", dy)
 
-    dy += 100
-    revive_btn = MenuButton("revive_btn.png", "revive", dy)
+    h = MenuButton("play_btn.png", "", 0).height
+    n = 4 if not car.distance else 5
+    y = (height - (n + 1) * h) // n
+    dy = y + h
+    play_btn = MenuButton("play_btn.png", "play", y)
+
+    y += dy
+    revive_btn = MenuButton("revive_btn.png", "revive", y)
     buttons_group.add(revive_btn)
-    dy += 100
-    menu_btn = MenuButton("menu_btn.png", "menu", dy)
-    dy += 100
-    shop_btn = MenuButton("shop_btn.png", "shop", dy)
-    dy += 100
-    quit_btn = MenuButton("quit_btn.png", "quit", dy)
+    y += dy
+    menu_btn = MenuButton("menu_btn.png", "menu", y)
+    y += dy
+    shop_btn = MenuButton("shop_btn.png", "shop", y)
+    y += dy
+    quit_btn = MenuButton("quit_btn.png", "quit", y)
 
     buttons_group.add(play_btn)
     buttons_group.add(revive_btn)

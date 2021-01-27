@@ -885,9 +885,12 @@ def death_screen():
     play_btn = MenuButton("play_btn.png", "play", y)
 
     y += dy
-    revive_btn = MenuButton("revive_btn.png", "revive", y)
-    buttons_group.add(revive_btn)
-    y += dy
+    lives_cnt = get_lives()
+    coins_cnt = get_coins()
+    if lives_cnt or coins_cnt >= 200:
+        revive_btn = MenuButton("revive_btn.png", "revive", y)
+        buttons_group.add(revive_btn)
+        y += dy
     menu_btn = MenuButton("menu_btn.png", "menu", y)
     y += dy
     shop_btn = MenuButton("shop_btn.png", "shop", y)
@@ -895,7 +898,8 @@ def death_screen():
     quit_btn = MenuButton("quit_btn.png", "quit", y)
 
     buttons_group.add(play_btn)
-    buttons_group.add(revive_btn)
+    if lives_cnt or coins_cnt >= 200:
+        buttons_group.add(revive_btn)
     buttons_group.add(menu_btn)
     buttons_group.add(shop_btn)
     buttons_group.add(quit_btn)

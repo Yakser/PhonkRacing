@@ -687,9 +687,8 @@ def scores():
         clock.tick(fps)
         pygame.display.flip()
 
-
-# --- ОСНОВНОЕ МЕНЮ ---
-def main_menu():
+# --- НАСТРОЙКИ ---
+def settings():
     bg = pygame.transform.scale(load_image('menu_bg.png'), (width, height))
     screen.blit(bg, (0, 0))
     buttons_group = pygame.sprite.Group()
@@ -703,7 +702,68 @@ def main_menu():
     coins_counter.blit()
     lives_counter.draw()
     h = MenuButton("play_btn.png", "", 0).height
-    n = 4 if not car.distance else 5
+    n = 3
+    y = (height - (n + 1) * h) // n
+    dy = y + h
+
+    shop_btn = MenuButton("shop_btn.png", "shop", y)
+    y += dy
+    scores_btn = MenuButton("scores_btn.png", "scores", y)
+    y += dy
+    quit_btn = MenuButton("quit_btn.png", "quit", y)
+
+    buttons_group.add(shop_btn)
+    buttons_group.add(scores_btn)
+    buttons_group.add(quit_btn)
+
+    running = True
+    while running:
+        mx, my = pygame.mouse.get_pos()
+        clicked = False
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    clicked = True
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    if car.distance:
+                        click_sound.play()
+                        return game()
+                    else:
+                        terminate()
+
+        for sprite in buttons_group.sprites():
+            if sprite.rect.collidepoint((mx, my)):
+                sprite.image = sprite.ico_hovered
+                if clicked:
+                    click_sound.play()
+                    return functions[sprite.functype]()
+            else:
+                sprite.image = sprite.ico
+        buttons_group.draw(screen)
+        pygame.display.flip()
+        clock.tick(fps)
+
+# --- ОСНОВНОЕ МЕНЮ ---
+def main_menu():
+    bg = pygame.transform.scale(load_image('menu_bg.png'), (width, height))
+    screen.blit(bg, (0, 0))
+    buttons_group = pygame.sprite.Group()
+    functions = {
+        "play": new_game,
+        "quit": terminate,
+        "continue": game,
+        "shop": shop,
+        "scores": scores,
+        "settings": settings
+    }
+    coins_counter.blit()
+    lives_counter.draw()
+    h = MenuButton("play_btn.png", "", 0).height
+    n = 5 if not car.distance else 6
     y = (height - (n + 1) * h) // n
     dy = y + h
 
@@ -717,11 +777,14 @@ def main_menu():
     y += dy
     scores_btn = MenuButton("scores_btn.png", "scores", y)
     y += dy
+    settings_btn = MenuButton("settings_btn.png", "settings", y)
+    y += dy
     quit_btn = MenuButton("quit_btn.png", "quit", y)
 
     buttons_group.add(play_btn)
     buttons_group.add(shop_btn)
     buttons_group.add(scores_btn)
+    buttons_group.add(settings_btn)
     buttons_group.add(quit_btn)
 
     running = True

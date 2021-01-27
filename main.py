@@ -5,7 +5,7 @@ import random
 import csv
 from pygame.locals import *
 
-# ------------------- CONSTANTS -------------------
+# ------------------- КОНСТАНТЫ -------------------
 size = width, height = 800, 800
 fps = 60
 heart_cost = 200
@@ -16,14 +16,18 @@ pygame.init()
 pygame.display.set_caption('PhonkRacing')
 pygame.display.set_icon(pygame.image.load(os.path.join('sprites', "ico.png")))
 pygame.event.set_allowed([pygame.QUIT, pygame.KEYDOWN, pygame.KEYUP, pygame.MOUSEBUTTONDOWN])
+
 screen = pygame.display.set_mode(size, DOUBLEBUF | SCALED)
 screen.set_alpha(None)
 screen_rect = screen.get_rect()
+
 clock = pygame.time.Clock()
+
 speed_accel = 0
 
-# ------------------- ЗВУКИ ------------------- Добавил Кондратьев Д.
+# ------------------- ЗВУКИ ------------------- Добавил Кондратьев Д. (изм. Яксанов Сергей)
 pygame.mixer.init()
+
 coin_sound1 = pygame.mixer.Sound('sounds/coin1.mp3')
 coin_sound2 = pygame.mixer.Sound('sounds/coin2.mp3')
 click_sound = pygame.mixer.Sound('sounds/click.mp3')
@@ -59,7 +63,7 @@ def load_image(name, colorkey=None):
         else:
             image = image.convert_alpha()
         return image
-    except:
+    except Exception:
         print("Произошла ошибка!")
         sys.exit()
 
@@ -171,7 +175,7 @@ class Road(pygame.sprite.Sprite):
             self.rect.y = -height
 
 
-# --- СПРАЙТ ВСТРЕЧНЫХ МАШИН --- Добавил Кондратьев Д.
+# --- СПРАЙТ ВСТРЕЧНЫХ МАШИН --- Добавил Кондратьев Д. (изм. Яксанов Сергей)
 class Traffic(pygame.sprite.Sprite):
     images = [pygame.transform.scale(load_image(f"traffic{i}.png"), (9 * 15, 16 * 15))
               for i in range(1, 6)]
@@ -242,7 +246,7 @@ class Car(pygame.sprite.Sprite):
                     random.choice([coin_sound1, coin_sound2]).play()
 
                     create_particles((collided_coin.rect.x + collided_coin.width // 2,
-                                     collided_coin.rect.y + collided_coin.rect.height // 2))
+                                      collided_coin.rect.y + collided_coin.rect.height // 2))
                     self.coins_cnt += 1
                     collided_coin.hide()
 
@@ -687,34 +691,40 @@ def scores():
         clock.tick(fps)
         pygame.display.flip()
 
+
 # --- НАСТРОЙКИ ---
 def settings():
     bg = pygame.transform.scale(load_image('menu_bg.png'), (width, height))
     screen.blit(bg, (0, 0))
+    blit_text("SETTINGS", '#f4de7e', 90, 10)
+    close_btn = MenuButton("close_btn.png", "main_menu", 0)
+    close_btn.resize(65, 65)
+    close_btn.move(15, 0)
     buttons_group = pygame.sprite.Group()
     functions = {
         "play": new_game,
         "quit": terminate,
         "continue": game,
         "shop": shop,
-        "scores": scores
+        "scores": scores,
+        "main_menu": main_menu
     }
     coins_counter.blit()
     lives_counter.draw()
-    h = MenuButton("play_btn.png", "", 0).height
-    n = 3
-    y = (height - (n + 1) * h) // n
-    dy = y + h
-
-    shop_btn = MenuButton("shop_btn.png", "shop", y)
-    y += dy
-    scores_btn = MenuButton("scores_btn.png", "scores", y)
-    y += dy
-    quit_btn = MenuButton("quit_btn.png", "quit", y)
-
-    buttons_group.add(shop_btn)
-    buttons_group.add(scores_btn)
-    buttons_group.add(quit_btn)
+    # h = MenuButton("play_btn.png", "", 0).height
+    # n = 3
+    # y = (height - (n + 1) * h) // n
+    # dy = y + h
+    #
+    # shop_btn = MenuButton("shop_btn.png", "shop", y)
+    # y += dy
+    # scores_btn = MenuButton("scores_btn.png", "scores", y)
+    # y += dy
+    # quit_btn = MenuButton("quit_btn.png", "quit", y)
+    #
+    # buttons_group.add(shop_btn)
+    # buttons_group.add(scores_btn)
+    buttons_group.add(close_btn)
 
     running = True
     while running:
@@ -746,6 +756,7 @@ def settings():
         buttons_group.draw(screen)
         pygame.display.flip()
         clock.tick(fps)
+
 
 # --- ОСНОВНОЕ МЕНЮ ---
 def main_menu():
@@ -836,7 +847,8 @@ def revive():
     else:
         lives_counter.draw()
         write_score(car.distance // fps * 5)
-        car.distance = 0
+        car.reset()
+        main_menu()
 
 
 # --- ВЫХОД В МЕНЮ ---
@@ -958,7 +970,6 @@ def game():
 
         if angle > 0 and accel_x > 0:
             angle *= .87
-
         elif angle < 0 and accel_x < 0:
             angle *= .87
 

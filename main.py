@@ -22,7 +22,7 @@ screen_rect = screen.get_rect()
 clock = pygame.time.Clock()
 speed_accel = 0
 
-# ------------------- ЗВУКИ -------------------
+# ------------------- ЗВУКИ ------------------- Добавил Кондратьев Д.
 pygame.mixer.init()
 coin_sound1 = pygame.mixer.Sound('sounds/coin1.mp3')
 coin_sound2 = pygame.mixer.Sound('sounds/coin2.mp3')
@@ -171,7 +171,7 @@ class Road(pygame.sprite.Sprite):
             self.rect.y = -height
 
 
-# --- СПРАЙТ ВСТРЕЧНЫХ МАШИН ---
+# --- СПРАЙТ ВСТРЕЧНЫХ МАШИН --- Добавил Кондратьев Д.
 class Traffic(pygame.sprite.Sprite):
     images = [pygame.transform.scale(load_image(f"traffic{i}.png"), (9 * 15, 16 * 15))
               for i in range(1, 6)]
